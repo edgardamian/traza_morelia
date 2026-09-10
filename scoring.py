@@ -77,56 +77,66 @@ def resample_polyline(coords: List[List[float]], num_points: int = 100) -> List[
 MORELIA_TIER_PHRASES = [
     {
         "min": 85,
-        "title": "Moreliano Taxista",
+        "title": "Mapa Mental Moreliano",
         "phrases": [
-            "Traes el GPS implantado en el cerebro, ¡le atinaste hasta a los baches!",
+            "Traes Morelia perfectamente trazada en la cabeza",            
+            "Traes el GPS implantado en el cerebro, ¡Taxista!",
             "Manejas el trazado de las calles como si tú hubieras construido media ciudad",
-            "Parece que creciste nadando en el Río Chiquito (cuando estaba limpio)",
+            "Parece que creciste nadando en el Río Chiquito",
             "Se ve que si le sabes Lusitoo!",
-            "Deberías de trabajar en SEDUM y Tránsito Municipal"
+            "Ese trazo trae brújula propia.",
+            "Aquí hay talento cartográfico. El IMPLAN toma nota 👀"
         ]
     },
     {
         "min": 75,
-        "title": "Maestro de Obra del Libramiento",
+        "title": "Rutero Moreliano",
         "phrases": [
             "Te ubicas perfecto sin necesidad de abrir Google Maps",
             "Sabes llegar a cualquier lado guiándote por la cantera",
             "Conoces la ciudad de memoria con una que otra duda razonable",
             "Reconoces la diferencia exacta entre Río Grande y Río Chiquito",
+            "Una que otra curva se fue de paseo, pero vas muy bien.",
             "Morelia corre por tus venas, bien trazado"
         ]
     },
     {
         "min": 50,
-        "title": "Turista Perdido en el bosque Cuauhtémoc",
+        "title": "Perdido en el bosque Cuauhtémoc",
         "phrases": [
             "Te ubicas en el Centro, pero te pierdes pasando el Libramiento",
             "Sabes llegar en Combi, pero no sabes cómo dibujarlo",
             "Casi le atinas, la cantera te guio a medias",
             "Si no ves la Catedral te desorientas un poquito",
+            "Te falta dar otra vuelta por Morelia para dominar el mapa",
+            "Buen intento: el territorio siempre tiene una que otra sorpresa",
             "Pasable, aunque el río te quedó un poco chueco"
         ]
     },
     {
         "min": 30,
-        "title": "Foráneo en Examen de Admisión",
+        "title": "Recién llegado a Morelia",
         "phrases": [
             "Confundes Las Tarascas con el Obelisco a Lázaro Cárdenas",
             "Tu río se fue a desembocar hasta Pátzcuaro",
             "Mandaste el Acueducto rumbo a Altozano",
-            "Te fuiste a meter a Tarímbaro sin querer",
+            "Te metiste a Charo sin querer",
+            "La intención es lo que cuenta; el río tomó otra ruta",
+            "Hay talento, sólo falta apoyarlo",
+            "No perdiste Morelia, la estás reconstruyendo",
             "Con este croquis hasta la Combi gris se perdería"
         ]
     },
     {
         "min": 15,
-        "title": "Visitante de Domingo en el Centro",
+        "title": "Primer Paseo por Morelia",
         "phrases": [
             "Para ti Morelia empieza y termina en los Portales",
             "¿Seguro que no estabas dibujando Uruapan?",
-            "¿Venías manejando con los ojos cerrados o ibas esquivando marchas en Madero?",
+            "¿Venías manejando con los ojos cerrados o ibas esquivando marchas en la Madero?",
             "Pensaste que el Río Grande era una calle peatonal",
+            "Puede que el río haya tomado vacaciones, pero el siguiente trazo puede salir mejor",
+            "La ciudad sigue ahí. Ahora hay que encontrarla",
             "Ni con Waze en la mano te salvas de esta, ¡vuelve a intentarlo!"
         ]
     }
@@ -183,77 +193,100 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
             max_dist_rev = d
     mean_dist_rev = sum_dist_rev / num_samples
     
-    # Seleccionar la mejor alineación de sentido
+    # Seleccionar la mejor alineación de sentido (directo vs inverso)
     if mean_dist_fwd <= mean_dist_rev:
         mean_error = mean_dist_fwd
         max_error = max_dist_fwd
+        res_truth_best = res_truth
     else:
         mean_error = mean_dist_rev
         max_error = max_dist_rev
+        res_truth_best = res_truth_rev
         
     # =========================================================================
+    # PARÁMETROS DE CALIBRACIÓN: 3 INDICADORES (LARGO, FORMA Y UBICACIÓN)
+    # Modifica estos valores para ajustar qué tan estricta es la evaluación.
     # =========================================================================
-    # PARÁMETROS DE CALIBRACIÓN MANUAL (AJUSTA ESTOS VALORES PARA CAMBIAR LA DIFICULTAD)
-    # =========================================================================
-    # 1. MARGEN DE GRACIA (en metros):
-    #    Si el error promedio del usuario es menor a esta distancia, NO se le restan puntos.
-    #    (180.0m equivale a ~1.5 cuadras de Morelia. 250m = muy fácil, 80m = más difícil).
-    GRACE_DISTANCE_METERS = 180.0
+    # 1. INDICADOR DE LARGO (0 a 100 pts):
+    #    ¿Qué tan completa es la longitud del trazo frente a la real?
+    #    Si dibuja al menos el 70% de la longitud real, obtiene 100 pts en largo.
+    UMBRAL_LARGO_COMPLETO = 0.70
 
-    # 2. MULTIPLICADOR DE TOLERANCIA POR CAPA:
-    #    Multiplica la escala base de cada capa geográfica.
-    #    (Mayor valor = calificaciones más altas para trazos desviados. Rango sugerido: 2.0 a 4.5).
-    TOLERANCE_MULTIPLIER = 3.5
+    # 2. INDICADOR DE UBICACIÓN (0 a 100 pts):
+    #    ¿Qué tan cerca está de donde pasa en Morelia?
+    #    - GRACIA_UBICACION_METROS: Si está a menos de esta distancia (ej. 150m = ~1 cuadra), saca 100 pts.
+    #    - TOLERANCIA_UBICACION_METROS: Margen de desvío aceptable según la escala de la capa.
+    GRACIA_UBICACION_METROS = 150.0
+    TOLERANCIA_UBICACION_METROS = max(tolerance_scale * 3.0, 900.0)
 
-    # 3. TOLERANCIA MÍNIMA GENERAL (en metros):
-    #    Garantiza una base generosa para todas las capas sin importar su tamaño.
-    #    (Rango sugerido: 600.0 a 1200.0).
-    MIN_TOLERANCE_METERS = 900.0
+    # 3. INDICADOR DE FORMA (0 a 100 pts):
+    #    ¿Tiene la silueta, curvatura y orientación correcta? (Evaluada independientemente de la ubicación).
+    #    - GRACIA_FORMA_METROS: Margen de flexibilidad para pequeñas irregularidades al dibujar a mano.
+    #    - TOLERANCIA_FORMA_METROS: Tolerancia para la silueta y curvas.
+    GRACIA_FORMA_METROS = 100.0
+    TOLERANCIA_FORMA_METROS = max(tolerance_scale * 2.0, 600.0)
 
-    # 4. EXPONENTE DE CURVA DE CAÍDA (FORMA DE LA NOTA):
-    #    Controla qué tan rápido caen los puntos al alejarse de la línea.
-    #    (1.8 o 2.0 crea una 'meseta' donde trazos cercanos sacan 90-100 pts. 1.0 cae rápido).
-    DECAY_POWER = 1.8
-
-    # 5. UMBRAL DE LONGITUD PARA CALIFICACIÓN COMPLETA (0.0 a 1.0):
-    #    Si el usuario dibuja al menos este porcentaje de la longitud total (ej. 60%),
-    #    recibe el 100% de los puntos de longitud (no se penaliza por faltar 1 o 2 cuadras al final).
-    MIN_LENGTH_RATIO_FULL_CREDIT = 0.60
+    # 4. PESOS DE CADA INDICADOR EN LA CALIFICACIÓN FINAL (deben sumar 1.0 = 100%):
+    PESO_UBICACION = 0.40   # 40% Ubicación geográfica (dónde está)
+    PESO_FORMA     = 0.35   # 35% Forma y curvatura (cómo es)
+    PESO_LARGO     = 0.25   # 25% Largo del trazo (cuánto abarca)
     # =========================================================================
 
-    # 3. Factor de penalización por longitud
+    # 1. CÁLCULO DEL INDICADOR DE LARGO
     len_drawn = path_length_meters(drawn_points)
     len_truth = path_length_meters(truth_points)
+    ratio_largo = (min(len_drawn, len_truth) / max(len_drawn, len_truth)) if max(len_drawn, len_truth) > 0 else 0.0
     
-    if len_truth > 0 and len_drawn > 0:
-        ratio = min(len_drawn, len_truth) / max(len_drawn, len_truth)
-        if ratio >= MIN_LENGTH_RATIO_FULL_CREDIT:
-            length_penalty = 1.0
-        else:
-            # Caída progresiva si solo dibujó un fragmento o punto
-            length_penalty = math.pow(ratio / MIN_LENGTH_RATIO_FULL_CREDIT, 1.2)
+    if ratio_largo >= UMBRAL_LARGO_COMPLETO:
+        score_largo = 100.0
     else:
-        length_penalty = 0.0
-        
-    # 4. Cálculo de puntaje flexible con zona de gracia
-    effective_error = max(0.0, mean_error - GRACE_DISTANCE_METERS)
-    eff_scale = max(tolerance_scale * TOLERANCE_MULTIPLIER, MIN_TOLERANCE_METERS)
-    norm_err = effective_error / eff_scale
-    
-    raw_score = 100.0 * math.exp(-math.pow(norm_err, DECAY_POWER))
-    
-    final_score = int(round(raw_score * length_penalty))
+        score_largo = 100.0 * (ratio_largo / UMBRAL_LARGO_COMPLETO)
+    score_largo = max(0.0, min(100.0, score_largo))
+
+    # 2. CÁLCULO DEL INDICADOR DE UBICACIÓN (Distancia al lugar real en Morelia)
+    error_ubicacion = max(0.0, mean_error - GRACIA_UBICACION_METROS)
+    score_ubicacion = 100.0 * math.exp(-math.pow(error_ubicacion / TOLERANCIA_UBICACION_METROS, 1.8))
+    score_ubicacion = max(0.0, min(100.0, score_ubicacion))
+
+    # 3. CÁLCULO DEL INDICADOR DE FORMA (Silueta centrada sin importar el desplazamiento)
+    cx_drawn = sum(p[0] for p in res_drawn) / num_samples
+    cy_drawn = sum(p[1] for p in res_drawn) / num_samples
+    cx_truth = sum(p[0] for p in res_truth_best) / num_samples
+    cy_truth = sum(p[1] for p in res_truth_best) / num_samples
+
+    cos_lat = math.cos((cy_drawn + cy_truth) * 0.5 * math.pi / 180.0)
+    sum_shape_err = 0.0
+    for i in range(num_samples):
+        dx_d = (res_drawn[i][0] - cx_drawn) * 111000 * cos_lat
+        dy_d = (res_drawn[i][1] - cy_drawn) * 111000
+        dx_t = (res_truth_best[i][0] - cx_truth) * 111000 * cos_lat
+        dy_t = (res_truth_best[i][1] - cy_truth) * 111000
+        sum_shape_err += math.hypot(dx_d - dx_t, dy_d - dy_t)
+
+    shape_error_meters = sum_shape_err / num_samples
+    error_forma = max(0.0, shape_error_meters - GRACIA_FORMA_METROS)
+    score_forma = 100.0 * math.exp(-math.pow(error_forma / TOLERANCIA_FORMA_METROS, 1.8))
+    score_forma = max(0.0, min(100.0, score_forma))
+
+    # 4. CALIFICACIÓN FINAL COMBINADA
+    score_base = (PESO_UBICACION * score_ubicacion) + (PESO_FORMA * score_forma) + (PESO_LARGO * score_largo)
+    factor_completitud = min(1.0, ratio_largo / UMBRAL_LARGO_COMPLETO) if UMBRAL_LARGO_COMPLETO > 0 else 1.0
+    final_score = int(round(score_base * factor_completitud))
     final_score = max(0, min(100, final_score))
-    
+
     phrase, title = pick_phrase_and_tier(final_score)
-    
+
     return {
         "score": final_score,
+        "scoreUbicacion": int(round(score_ubicacion)),
+        "scoreForma": int(round(score_forma)),
+        "scoreLargo": int(round(score_largo)),
         "meanErrorMeters": round(mean_error, 1),
         "maxErrorMeters": round(max_error, 1),
+        "shapeErrorMeters": round(shape_error_meters, 1),
         "lengthDrawnMeters": round(len_drawn, 1),
         "lengthTruthMeters": round(len_truth, 1),
-        "lengthRatio": round(length_penalty, 2),
+        "lengthRatio": round(ratio_largo, 2),
         "tierTitle": title,
         "phrase": phrase,
         "truth": truth_points
