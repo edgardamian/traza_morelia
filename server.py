@@ -1,6 +1,7 @@
 import os
 import json
 import time
+from datetime import datetime
 import glob
 import re
 import unicodedata
@@ -354,7 +355,7 @@ def get_verdict(score: int = 0):
 
 @app.post("/api/session")
 def save_session(req: SessionRequest):
-    """Guarda el mapa completo dibujado por el usuario para investigación urbana (IMPLAN/SIGEM)."""
+    """Guarda el mapa completo dibujado por el usuario en formato GeoJSON (RFC 7946) con nombre, día y hora."""
     layers = load_layers_data()
     scores = {}
     total_score = 0
@@ -369,25 +370,92 @@ def save_session(req: SessionRequest):
             valid_count += 1
 
     global_score = round(total_score / len(layers)) if layers else 0
-    
-    session_data = {
-        "clientId": req.clientId,
-        "timestamp": int(time.time()),
-        "isoDate": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "globalScore": global_score,
-        "perLineScores": scores,
-        "lines": req.lines,
-        "metadata": req.metadata
+
+    now = datetime.now()
+    fecha_str = now.strftime("%Y-%m-%d")
+    hora_str = now.strftime("%H-%M-%S")
+    hora_legible = now.strftime("%H:%M:%S")
+    iso_datetime = now.isoformat()
+    dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+    dia_semana = dias[now.weekday()]
+
+    raw_name = str(req.metadata.get("playerName", "")).strip()
+    player_name = raw_name if raw_name else "anonimo"
+    name_slug = slugify(player_name)
+    if not name_slug:
+        name_slug = "anonimo"
+
+    features = []
+    for lid, points in req.lines.items():
+        if not points or len(points) < 2:
+            continue
+        layer = find_layer(layers, lid)
+        layer_name = layer["name"] if layer else lid
+        layer_id = layer["id"] if layer else lid
+        layer_color = layer.get("color", "#c45b43") if layer else "#c45b43"
+        line_score = scores.get(layer_id, 0)
+        length_m = round(path_length_meters(points), 1)
+
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "id": layer_id,
+                "nombre": layer_name,
+                "color": layer_color,
+                "puntaje": line_score,
+                "longitud_metros": length_m,
+                "participante": player_name,
+                "fecha": fecha_str,
+                "dia_semana": dia_semana,
+                "hora": hora_legible,
+                "dificultad": req.metadata.get("difficulty", "normal"),
+                "clientId": req.clientId
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [[round(float(pt[0]), 6), round(float(pt[1]), 6)] for pt in points]
+            }
+        }
+        features.append(feature)
+
+    geojson_data = {
+        "type": "FeatureCollection",
+        "name": f"Croquis Morelia - {player_name}",
+        "crs": {
+            "type": "name",
+            "properties": {
+                "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+            }
+        },
+        "properties": {
+            "participante": player_name,
+            "fecha": fecha_str,
+            "dia_semana": dia_semana,
+            "hora": hora_legible,
+            "fecha_hora": iso_datetime,
+            "timestamp": int(time.time()),
+            "puntaje_global": global_score,
+            "dificultad": req.metadata.get("difficulty", "normal"),
+            "total_capas_trazadas": len(features),
+            "clientId": req.clientId,
+            "perLineScores": scores,
+            "metadatos": req.metadata
+        },
+        "features": features
     }
-    
-    filename = f"session_{req.clientId[:12]}_{int(time.time())}.json"
+
+    filename = f"croquis_{name_slug}_{fecha_str}_{hora_str}.geojson"
     filepath = os.path.join(SAVED_DIR, filename)
     with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(session_data, f, indent=2, ensure_ascii=False)
-        
+        json.dump(geojson_data, f, indent=2, ensure_ascii=False)
+
     return {
         "status": "saved",
         "filename": filename,
+        "format": "geojson",
+        "participante": player_name,
+        "fecha": fecha_str,
+        "hora": hora_legible,
         "globalScore": global_score,
         "perLineScores": scores
     }
@@ -397,29 +465,33 @@ def save_session(req: SessionRequest):
 def get_stats():
     """Retorna estadísticas agregadas de la memoria colectiva de Morelia."""
     layers = load_layers_data()
-    files = glob.glob(os.path.join(SAVED_DIR, "session_*.json"))
+    files = glob.glob(os.path.join(SAVED_DIR, "*.geojson")) + glob.glob(os.path.join(SAVED_DIR, "session_*.json"))
     total_sessions = len(files)
-    
+
     score_sums = {l["id"]: 0 for l in layers}
     score_counts = {l["id"]: 0 for l in layers}
     global_sum = 0
-    
+
     for fpath in files:
         try:
             with open(fpath, "r", encoding="utf-8") as f:
                 s = json.load(f)
-                global_sum += s.get("globalScore", 0)
-                for lid, sc in s.get("perLineScores", {}).items():
+                props = s.get("properties", s)
+                g_score = props.get("puntaje_global", props.get("globalScore", 0))
+                global_sum += g_score
+
+                line_scores = props.get("perLineScores", {})
+                for lid, sc in line_scores.items():
                     if lid in score_sums:
                         score_sums[lid] += sc
                         score_counts[lid] += 1
         except Exception:
             pass
-            
+
     avg_per_layer = {}
     for lid in score_sums:
         avg_per_layer[lid] = round(score_sums[lid] / score_counts[lid], 1) if score_counts[lid] > 0 else 0
-        
+
     return {
         "totalMapsDrawn": total_sessions,
         "averageGlobalScore": round(global_sum / total_sessions, 1) if total_sessions > 0 else 0,

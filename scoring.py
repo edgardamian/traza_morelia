@@ -238,13 +238,13 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
     # =========================================================================
     # 1. INDICADOR DE LARGO (0 a 100 pts):
     #    Si dibuja al menos el 80% de la longitud real, obtiene 100 pts en largo.
-    UMBRAL_LARGO_COMPLETO = 0.80
+    UMBRAL_LARGO_COMPLETO = 0.60    
 
     # 2. INDICADOR DE UBICACIÓN (0 a 100 pts):
     #    - GRACIA_UBICACION_METROS: Si está a menos de esta distancia (100m = ~1 cuadra), saca 100 pts.
     #    - TOLERANCIA_UBICACION_METROS: Proporcional al tamaño real (8% de la longitud, mín. 600m).
     #      Para una calle corta de 2 km = 600m. Para el Libramiento de 26 km = ~2,100m.
-    GRACIA_UBICACION_METROS = 200.0
+    GRACIA_UBICACION_METROS = 100
     TOLERANCIA_UBICACION_METROS = max(len_truth * 0.08, 600.0)
 
     # 3. INDICADOR DE FORMA (0 a 100 pts): 
@@ -254,9 +254,9 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
     TOLERANCIA_FORMA_METROS = max(len_truth * 0.06, 500.0)
 
     # 4. PESOS DE CADA INDICADOR EN LA CALIFICACIÓN FINAL
-    PESO_UBICACION = 0.65  
-    PESO_FORMA     = 0.20   
-    PESO_LARGO     = 0.15   
+    PESO_UBICACION = 0.80
+    PESO_FORMA     = 0.15 
+    PESO_LARGO     = 0.05   
     # =========================================================================
 
     # 1. CÁLCULO DEL INDICADOR DE LARGO
