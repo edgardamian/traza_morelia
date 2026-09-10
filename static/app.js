@@ -17,7 +17,6 @@
 
   const LS_CLIENT_ID = "croquis_morelia_client_id";
   const LS_RUN_STATE = "croquis_morelia_run_state";
-  const LS_PLAYER_NAME = "croquis_morelia_player_name";
 
   // Helpers Geográficos
   function approxMeters(latA, lonA, latB, lonB) {
@@ -60,8 +59,7 @@
   let anchorsList = [];
   let valleGeo = null;
 
-  function freshRunState(difficulty = "normal", playerName = null) {
-    const pName = (playerName !== null) ? playerName : (localStorage.getItem(LS_PLAYER_NAME) || "");
+  function freshRunState(difficulty = "normal", playerName = "") {
     return {
       order: shuffle(canonicalOrder),
       currentIndex: 0,
@@ -70,7 +68,7 @@
       perLineTiers: {},
       perLinePhrases: {},
       difficulty,
-      playerName: pName,
+      playerName: playerName || "",
       finished: false,
       sessionSaved: false
     };
@@ -87,9 +85,7 @@
       const parsed = JSON.parse(raw);
       if (!parsed || !Array.isArray(parsed.order)) return null;
       if (parsed.difficulty !== "hard") parsed.difficulty = "normal";
-      if (typeof parsed.playerName !== "string") {
-        parsed.playerName = localStorage.getItem(LS_PLAYER_NAME) || "";
-      }
+      parsed.playerName = typeof parsed.playerName === "string" ? parsed.playerName : "";
       return parsed;
     } catch (e) {
       return null;
@@ -98,6 +94,7 @@
 
   function clearRunState() {
     localStorage.removeItem(LS_RUN_STATE);
+    localStorage.removeItem("croquis_morelia_player_name");
   }
 
   function currentLineId() { return state.order[state.currentIndex]; }
@@ -500,9 +497,8 @@
   // Reiniciar Juego y Reintentar Elemento
   function restartGame() {
     const diff = state ? state.difficulty : "normal";
-    const curName = (state && state.playerName) || localStorage.getItem(LS_PLAYER_NAME) || "";
     clearRunState();
-    state = freshRunState(diff, curName);
+    state = freshRunState(diff, "");
     currentStrokePoints = [];
     isDrawing = false;
     finalSheet.hidden = true;
@@ -511,6 +507,7 @@
     anchorsToggle.disabled = false;
     clearLayer(gUserdraw);
     startLineTurn();
+    if (playerNameInput) playerNameInput.value = "";
     openAboutModal(true);
   }
 
@@ -1072,7 +1069,12 @@
   // Pantalla Previa de Bienvenida y Modal Acerca de
   function openAboutModal(isWelcome = false) {
     if (playerNameInput) {
-      playerNameInput.value = (state && state.playerName) || localStorage.getItem(LS_PLAYER_NAME) || "";
+      if (isWelcome) {
+        playerNameInput.value = "";
+        if (state) state.playerName = "";
+      } else {
+        playerNameInput.value = (state && state.playerName) || "";
+      }
     }
     if (aboutStartBtnText) {
       aboutStartBtnText.textContent = isWelcome ? "¡Comenzar a dibujar!" : "Continuar dibujando";
@@ -1090,9 +1092,6 @@
     if (playerNameInput) {
       const raw = playerNameInput.value.trim();
       if (state) state.playerName = raw;
-      if (raw) {
-        localStorage.setItem(LS_PLAYER_NAME, raw);
-      }
       saveRunState();
     }
     aboutModal.classList.remove("visible");
