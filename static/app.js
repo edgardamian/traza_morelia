@@ -14,7 +14,6 @@
   const CAPTURE_MIN_PX = 3;
   const REVEAL_DRAW_MS = 600;
   const REVEAL_SCORE_TICK_MS = 650;
-  const REVEAL_AUTO_ADVANCE_MS = 2200;
 
   const LS_CLIENT_ID = "croquis_morelia_client_id";
   const LS_RUN_STATE = "croquis_morelia_run_state";
@@ -131,6 +130,8 @@
   const revealPhraseEl = document.getElementById("reveal-phrase");
   const revealNextBtn = document.getElementById("reveal-next");
 
+  revealBanner?.addEventListener("pointerdown", (e) => e.stopPropagation());
+
   const finalSheet = document.getElementById("final-sheet");
   const flipCard = document.getElementById("flip-card");
   const globalScoreEl = document.getElementById("global-score");
@@ -234,9 +235,14 @@
     }
   }, { passive: false });
 
-  // Atajos de teclado (+, -, 0)
+  // Atajos de teclado (+, -, 0, y Enter/Espacio para avanzar turno)
   window.addEventListener("keydown", (e) => {
     if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+    if (revealActive && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      revealNextBtn?.click();
+      return;
+    }
     if (e.key === "+" || e.key === "=") {
       zoomIn();
     } else if (e.key === "-" || e.key === "_") {
@@ -530,6 +536,15 @@
     revealBanner.classList.add("visible");
     tickScore(revealScoreEl, score);
 
+    // Ajustar texto del botón según si restan capas o es la última
+    const isLast = drawnCount() >= state.order.length;
+    const btnTextEl = revealNextBtn.querySelector(".reveal-next-text");
+    if (btnTextEl) {
+      btnTextEl.textContent = isLast ? "Ver resultados finales" : "Siguiente elemento";
+    } else {
+      revealNextBtn.textContent = isLast ? "Ver resultados finales" : "Siguiente elemento";
+    }
+
     const advance = () => {
       if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
       revealNextBtn.onclick = null;
@@ -538,7 +553,7 @@
       advanceTurn();
     };
     revealNextBtn.onclick = advance;
-    revealTimer = setTimeout(advance, REVEAL_AUTO_ADVANCE_MS);
+    // NOTA: Se desactiva el avance automático por petición; el usuario decide cuándo avanzar.
   }
 
   function onListo() {

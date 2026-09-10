@@ -480,82 +480,157 @@ html, body {
   50% { transform: translateX(-50%) scale(1.02); opacity: 1; }
 }
 
-/* Banner de Revelado */
+/* Tarjeta Lateral de Revelado y Puntaje (A la Izquierda) */
 #reveal-banner {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
-  right: 16px;
-  background: var(--bg-surface);
+  top: 20px;
+  left: 20px;
+  bottom: auto;
+  right: auto;
+  width: 380px;
+  max-width: calc(100% - 40px);
+  max-height: calc(100% - 40px);
+  overflow-y: auto;
+  background: var(--bg-surface-translucent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-lg);
-  padding: 18px 20px;
-  box-shadow: var(--shadow-lg);
+  padding: 22px;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  transform: translateY(120%);
+  gap: 16px;
+  transform: translateX(calc(-100% - 35px));
   opacity: 0;
   pointer-events: none;
-  transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease;
   z-index: 30;
 }
 
 #reveal-banner.visible {
-  transform: translateY(0);
+  transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
+}
+
+.reveal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .reveal-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
 }
 
 .reveal-hard-label {
   background: #e63946;
   color: #fff;
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 800;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
 }
 
 .reveal-tier {
   font-family: var(--font-display);
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 1.05rem;
+  font-weight: 800;
   color: var(--cantera-rosa-dark);
+  letter-spacing: -0.2px;
 }
 
 .reveal-score-wrap {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 6px;
 }
 
 #reveal-score {
   font-family: var(--font-display);
-  font-size: 2.8rem;
+  font-size: 3.4rem;
   font-weight: 800;
   line-height: 1;
   color: var(--text-primary);
+  letter-spacing: -1.5px;
 }
 
 .reveal-pts {
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 600;
   color: var(--text-muted);
 }
 
+.reveal-phrase-box {
+  position: relative;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--cantera-rosa);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 14px 16px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.quote-icon {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: var(--cantera-rosa);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
 .reveal-phrase {
-  font-size: 0.95rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
   font-style: italic;
-  color: var(--text-secondary);
-  line-height: 1.35;
+  color: var(--text-primary);
+  line-height: 1.45;
+  margin: 0;
+  padding-right: 18px;
+}
+
+.reveal-next-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 20px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: 0 4px 14px rgba(184, 80, 66, 0.35);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.reveal-next-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(184, 80, 66, 0.45);
+}
+
+.reveal-next-btn:active {
+  transform: translateY(1px);
+}
+
+.reveal-next-arrow {
+  transition: transform 0.2s ease;
+}
+
+.reveal-next-btn:hover .reveal-next-arrow {
+  transform: translateX(3px);
 }
 
 /* ==========================================================================
@@ -986,11 +1061,29 @@ html, body {
     padding-right: 24px;
   }
   #reveal-banner {
-    left: 50%;
-    transform: translateX(-50%) translateY(120%);
-    width: 480px;
+    top: 24px;
+    left: 24px;
+    width: 390px;
+    transform: translateX(calc(-100% - 35px));
   }
   #reveal-banner.visible {
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 480px) {
+  #reveal-banner {
+    top: 12px;
+    left: 12px;
+    width: calc(100% - 24px);
+    max-width: 340px;
+    padding: 16px;
+    gap: 12px;
+  }
+  #reveal-score {
+    font-size: 2.8rem;
+  }
+  .reveal-phrase {
+    font-size: 1.05rem;
   }
 }
