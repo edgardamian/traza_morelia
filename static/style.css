@@ -607,43 +607,12 @@ html, body {
   flex-shrink: 0;
 }
 
-.reveal-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.reveal-retry-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 13px 18px;
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-weight: 700;
-  white-space: nowrap;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.reveal-retry-btn:hover {
-  transform: translateY(-1px);
-}
-
-.reveal-retry-btn:active {
-  transform: translateY(1px);
-}
-
 .reveal-next-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  flex: 1;
-  width: auto;
+  width: 100%;
   padding: 13px 20px;
   font-family: var(--font-display);
   font-size: 1rem;
@@ -1084,6 +1053,18 @@ html, body {
   display: flex;
   gap: 8px;
   margin-top: 6px;
+}
+
+.modal-actions-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.modal-actions-stacked .pill-btn {
+  width: 100%;
+  justify-content: center;
 }
 
 /* ==========================================================================

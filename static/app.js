@@ -158,10 +158,11 @@
   const confirmModeSwitchBtn = document.getElementById("confirm-mode-switch-btn");
 
   const reiniciarBtn = document.getElementById("reiniciar-btn");
-  const revealRetryBtn = document.getElementById("reveal-retry");
   const confirmResetModal = document.getElementById("confirm-reset-modal");
+  const resetCurrentBtn = document.getElementById("reset-current-btn");
+  const resetAllBtn = document.getElementById("reset-all-btn");
   const confirmResetCancelBtn = document.getElementById("confirm-reset-cancel-btn");
-  const confirmResetOkBtn = document.getElementById("confirm-reset-ok-btn");
+  const confirmResetCloseBtn = confirmResetModal?.querySelector(".confirm-reset-close");
 
   const gValle = d3.select("#layer-valle");
   const gAnchors = d3.select("#layer-anchors");
@@ -489,10 +490,13 @@
     const diff = state.difficulty;
     clearRunState();
     state = freshRunState(diff);
+    currentStrokePoints = [];
+    isDrawing = false;
     finalSheet.hidden = true;
     revealBanner.classList.remove("visible");
     revealActive = false;
     anchorsToggle.disabled = false;
+    clearLayer(gUserdraw);
     startLineTurn();
   }
 
@@ -507,33 +511,42 @@
   }
 
   reiniciarBtn?.addEventListener("click", () => {
-    if (drawnCount() === 0 && currentStrokePoints.length === 0 && !revealActive) {
-      restartGame();
-    } else {
-      openConfirmResetModal();
-    }
+    openConfirmResetModal();
   });
 
   confirmResetCancelBtn?.addEventListener("click", closeConfirmResetModal);
-  confirmResetOkBtn?.addEventListener("click", () => {
-    closeConfirmResetModal();
-    restartGame();
-  });
+  confirmResetCloseBtn?.addEventListener("click", closeConfirmResetModal);
+  confirmResetModal?.querySelector(".modal-backdrop")?.addEventListener("click", closeConfirmResetModal);
 
   function retryCurrentElement() {
     const lid = currentLineId();
-    delete state.drawnLines[lid];
-    delete state.perLineScores[lid];
-    delete state.perLineTiers[lid];
-    delete state.perLinePhrases[lid];
-    saveRunState();
+    if (lid) {
+      delete state.drawnLines[lid];
+      delete state.perLineScores[lid];
+      delete state.perLineTiers[lid];
+      delete state.perLinePhrases[lid];
+      saveRunState();
+    }
+    currentStrokePoints = [];
+    isDrawing = false;
     revealBanner.classList.remove("visible");
     revealActive = false;
     anchorsToggle.disabled = false;
+    clearLayer(gUserdraw);
+    updateListoState();
+    updateBorrarState();
     startLineTurn();
   }
 
-  revealRetryBtn?.addEventListener("click", retryCurrentElement);
+  resetCurrentBtn?.addEventListener("click", () => {
+    closeConfirmResetModal();
+    retryCurrentElement();
+  });
+
+  resetAllBtn?.addEventListener("click", () => {
+    closeConfirmResetModal();
+    restartGame();
+  });
 
   // Flujo de Turnos
   let revealActive = false;
