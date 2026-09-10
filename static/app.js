@@ -157,6 +157,12 @@
   const confirmModeCancelBtn = document.getElementById("confirm-mode-cancel-btn");
   const confirmModeSwitchBtn = document.getElementById("confirm-mode-switch-btn");
 
+  const reiniciarBtn = document.getElementById("reiniciar-btn");
+  const revealRetryBtn = document.getElementById("reveal-retry");
+  const confirmResetModal = document.getElementById("confirm-reset-modal");
+  const confirmResetCancelBtn = document.getElementById("confirm-reset-cancel-btn");
+  const confirmResetOkBtn = document.getElementById("confirm-reset-ok-btn");
+
   const gValle = d3.select("#layer-valle");
   const gAnchors = d3.select("#layer-anchors");
   const gTruth = d3.select("#layer-truth");
@@ -477,6 +483,57 @@
     closeConfirmModeModal();
     if (diff) applyDifficultyChange(diff);
   });
+
+  // Reiniciar Juego y Reintentar Elemento
+  function restartGame() {
+    const diff = state.difficulty;
+    clearRunState();
+    state = freshRunState(diff);
+    finalSheet.hidden = true;
+    revealBanner.classList.remove("visible");
+    revealActive = false;
+    anchorsToggle.disabled = false;
+    startLineTurn();
+  }
+
+  function openConfirmResetModal() {
+    confirmResetModal.hidden = false;
+    requestAnimationFrame(() => confirmResetModal.classList.add("visible"));
+  }
+
+  function closeConfirmResetModal() {
+    confirmResetModal.classList.remove("visible");
+    setTimeout(() => { confirmResetModal.hidden = true; }, 240);
+  }
+
+  reiniciarBtn?.addEventListener("click", () => {
+    if (drawnCount() === 0 && currentStrokePoints.length === 0 && !revealActive) {
+      restartGame();
+    } else {
+      openConfirmResetModal();
+    }
+  });
+
+  confirmResetCancelBtn?.addEventListener("click", closeConfirmResetModal);
+  confirmResetOkBtn?.addEventListener("click", () => {
+    closeConfirmResetModal();
+    restartGame();
+  });
+
+  function retryCurrentElement() {
+    const lid = currentLineId();
+    delete state.drawnLines[lid];
+    delete state.perLineScores[lid];
+    delete state.perLineTiers[lid];
+    delete state.perLinePhrases[lid];
+    saveRunState();
+    revealBanner.classList.remove("visible");
+    revealActive = false;
+    anchorsToggle.disabled = false;
+    startLineTurn();
+  }
+
+  revealRetryBtn?.addEventListener("click", retryCurrentElement);
 
   // Flujo de Turnos
   let revealActive = false;

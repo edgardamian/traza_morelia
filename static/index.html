@@ -38,13 +38,21 @@
           <div class="kicker" id="line-kicker">hidrografía · río sur</div>
           <div class="line-name" id="line-name">Cargando Morelia…</div>
         </div>
-        <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-        </button>
+        <div class="header-actions">
+          <button id="reiniciar-btn" class="icon-btn" type="button" aria-label="Reiniciar croquis" title="Reiniciar croquis completo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <polyline points="3 3 3 8 8 8"></polyline>
+            </svg>
+          </button>
+          <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto" title="Información">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div id="utility-row">
@@ -117,13 +125,22 @@
             <p id="reveal-phrase" class="reveal-phrase">Cálculo de similitud espacial...</p>
           </div>
         </div>
-        <button id="reveal-next" class="pill-btn highlight reveal-next-btn" type="button">
-          <span class="reveal-next-text">Siguiente elemento</span>
-          <svg class="reveal-next-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
+        <div class="reveal-actions">
+          <button id="reveal-retry" class="pill-btn secondary reveal-retry-btn" type="button" title="Volver a trazar este elemento">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <polyline points="3 3 3 8 8 8"></polyline>
+            </svg>
+            <span>Reintentar</span>
+          </button>
+          <button id="reveal-next" class="pill-btn highlight reveal-next-btn" type="button">
+            <span class="reveal-next-text">Siguiente elemento</span>
+            <svg class="reveal-next-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- CONTROLES DE ZOOM FLOTANTES -->
@@ -296,6 +313,19 @@
       <div class="modal-actions">
         <button id="confirm-end-continue-btn" class="pill-btn primary" type="button">Seguir dibujando</button>
         <button id="confirm-end-stop-btn" class="pill-btn secondary" type="button">Ver mi croquis</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAR REINICIAR -->
+  <div id="confirm-reset-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-reset-title">
+    <div class="modal-backdrop" aria-hidden="true"></div>
+    <div class="modal-content">
+      <h3 id="confirm-reset-title">¿Reiniciar todo el croquis?</h3>
+      <p id="confirm-reset-body">Se borrarán tus trazos actuales y comenzarás de nuevo desde el primer elemento.</p>
+      <div class="modal-actions">
+        <button id="confirm-reset-cancel-btn" class="pill-btn ghost" type="button">Cancelar</button>
+        <button id="confirm-reset-ok-btn" class="pill-btn highlight" type="button">Sí, reiniciar</button>
       </div>
     </div>
   </div>
