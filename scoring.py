@@ -79,7 +79,7 @@ MORELIA_TIER_PHRASES = [
         "min": 85,
         "title": "Moreliano Taxista",
         "phrases": [
-            "Traes el GPS implantado en el cerebro, ¡le atinaste hasta a los baches!"
+            "Traes el GPS implantado en el cerebro, ¡le atinaste hasta a los baches!",
             "Manejas el trazado de las calles como si tú hubieras construido media ciudad",
             "Parece que creciste nadando en el Río Chiquito (cuando estaba limpio)",
             "Se ve que si le sabes Lusitoo!",

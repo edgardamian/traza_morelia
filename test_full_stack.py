@@ -11,7 +11,8 @@ endpoints = [
     ("/api/layers", "application/json"),
     ("/api/anchors", "application/json"),
     ("/api/valle", "application/json"),
-    ("/api/stats", "application/json")
+    ("/api/stats", "application/json"),
+    ("/api/verdict?score=85", "application/json")
 ]
 
 print("=== VERIFICACION INTEGRAL DE RECURSOS Y SERVICIOS DE CROQUIS MORELIA ===")

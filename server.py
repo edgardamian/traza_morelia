@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
-from scoring import evaluate_stroke, path_length_meters
+from scoring import evaluate_stroke, path_length_meters, pick_phrase_and_tier
 
 app = FastAPI(title="Croquis Morelia API", description="API de evaluación geográfica y captura de memoria urbana para Morelia")
 
@@ -343,6 +343,13 @@ def calculate_score(req: ScoreRequest):
 
     result = evaluate_stroke(req.points, truth, tol)
     return result
+
+
+@app.get("/api/verdict")
+def get_verdict(score: int = 0):
+    """Obtiene la frase y nivel representativo de Morelia para un puntaje global usando MORELIA_TIER_PHRASES."""
+    phrase, tier = pick_phrase_and_tier(max(0, min(100, score)))
+    return {"tier": tier, "phrase": phrase, "score": score}
 
 
 @app.post("/api/session")

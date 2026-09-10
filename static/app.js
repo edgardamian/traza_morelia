@@ -760,24 +760,16 @@
       const globalScore = computeGlobalScore();
       globalScoreEl.textContent = String(globalScore);
 
-      let verdict = "Turista en el Tranvía";
-      let phrase = "Para ti Morelia empieza y termina en los Portales";
-      if (globalScore >= 85) {
-        verdict = "Moreliano de Cepa";
-        phrase = "Te sabes las calles mejor que chofer de Ruta Gris";
-      } else if (globalScore >= 70) {
-        verdict = "Guayangareo en el Corazón";
-        phrase = "Te ubicas perfecto sin necesidad de abrir Google Maps";
-      } else if (globalScore >= 45) {
-        verdict = "Moreliano en Combi";
-        phrase = "Te ubicas en el Centro pero te pierdes pasando el Libramiento";
-      } else if (globalScore >= 20) {
-        verdict = "Te Ahogaste en el Río";
-        phrase = "Confundes Las Tarascas con el Obelisco a Lázaro Cárdenas";
-      }
-
-      shareVerdictEl.textContent = verdict;
-      sharePhraseEl.textContent = `"${phrase}"`;
+      // Obtener veredicto y frase directamente de MORELIA_TIER_PHRASES en scoring.py
+      fetch(`/api/verdict?score=${globalScore}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.tier) shareVerdictEl.textContent = data.tier;
+          if (data.phrase) sharePhraseEl.textContent = `"${data.phrase}"`;
+        })
+        .catch((err) => {
+          console.warn("No se pudo obtener veredicto del backend:", err);
+        });
       renderShareMedallions();
       renderResultsTable();
     });
