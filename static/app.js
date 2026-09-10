@@ -17,6 +17,7 @@
 
   const LS_CLIENT_ID = "croquis_morelia_client_id";
   const LS_RUN_STATE = "croquis_morelia_run_state";
+  const LS_PLAYER_NAME = "croquis_morelia_player_name";
 
   // Helpers Geográficos
   function approxMeters(latA, lonA, latB, lonB) {
@@ -59,7 +60,8 @@
   let anchorsList = [];
   let valleGeo = null;
 
-  function freshRunState(difficulty = "normal") {
+  function freshRunState(difficulty = "normal", playerName = null) {
+    const pName = (playerName !== null) ? playerName : (localStorage.getItem(LS_PLAYER_NAME) || "");
     return {
       order: shuffle(canonicalOrder),
       currentIndex: 0,
@@ -68,6 +70,7 @@
       perLineTiers: {},
       perLinePhrases: {},
       difficulty,
+      playerName: pName,
       finished: false,
       sessionSaved: false
     };
@@ -84,6 +87,9 @@
       const parsed = JSON.parse(raw);
       if (!parsed || !Array.isArray(parsed.order)) return null;
       if (parsed.difficulty !== "hard") parsed.difficulty = "normal";
+      if (typeof parsed.playerName !== "string") {
+        parsed.playerName = localStorage.getItem(LS_PLAYER_NAME) || "";
+      }
       return parsed;
     } catch (e) {
       return null;
@@ -147,6 +153,13 @@
   const flipToFrontBtn = document.getElementById("flip-to-front-btn");
 
   const aboutModal = document.getElementById("about-modal");
+  const playerNameInput = document.getElementById("player-name-input");
+  const aboutStartBtn = document.getElementById("about-start-btn");
+  const aboutStartBtnText = document.getElementById("about-start-btn-text");
+  const shareCardTitle = document.getElementById("share-card-title");
+  const shareCardSub = document.getElementById("share-card-sub");
+  const shareCardFooterText = document.getElementById("share-card-footer-text");
+
   const confirmEndModal = document.getElementById("confirm-end-modal");
   const confirmEndBody = document.getElementById("confirm-end-body");
   const confirmEndContinueBtn = document.getElementById("confirm-end-continue-btn");
@@ -486,9 +499,10 @@
 
   // Reiniciar Juego y Reintentar Elemento
   function restartGame() {
-    const diff = state.difficulty;
+    const diff = state ? state.difficulty : "normal";
+    const curName = (state && state.playerName) || localStorage.getItem(LS_PLAYER_NAME) || "";
     clearRunState();
-    state = freshRunState(diff);
+    state = freshRunState(diff, curName);
     currentStrokePoints = [];
     isDrawing = false;
     finalSheet.hidden = true;
@@ -497,6 +511,7 @@
     anchorsToggle.disabled = false;
     clearLayer(gUserdraw);
     startLineTurn();
+    openAboutModal(true);
   }
 
   function openConfirmResetModal() {
@@ -791,7 +806,10 @@
       body: JSON.stringify({
         clientId: getClientId(),
         lines: state.drawnLines,
-        metadata: { difficulty: state.difficulty }
+        metadata: { 
+          difficulty: state.difficulty,
+          playerName: state.playerName || ""
+        }
       })
     }).catch((e) => console.error("Error guardando sesión:", e));
   }
@@ -804,6 +822,21 @@
     flipCard.classList.remove("flipped");
 
     requestAnimationFrame(() => {
+      const pName = (state.playerName || "").trim();
+      if (shareCardTitle) {
+        shareCardTitle.textContent = pName ? `Croquis de ${pName}` : "Mi Croquis de Morelia";
+      }
+      if (shareCardSub) {
+        shareCardSub.textContent = pName
+          ? `Trazado de memoria por ${pName} · Valle de Guayangareo`
+          : "Memoria colectiva del Valle de Guayangareo";
+      }
+      if (shareCardFooterText) {
+        shareCardFooterText.textContent = pName
+          ? `Participante: ${pName} · Croquis Morelia`
+          : "Croquis Morelia · Plataforma de Percepción Geográfica";
+      }
+
       renderFinalMap();
       const globalScore = computeGlobalScore();
       globalScoreEl.textContent = String(globalScore);
@@ -828,11 +861,7 @@
   flipToFrontBtn.addEventListener("click", () => flipCard.classList.remove("flipped"));
 
   jugarDeNuevoBtn.addEventListener("click", () => {
-    const diff = state.difficulty;
-    clearRunState();
-    state = freshRunState(diff);
-    finalSheet.hidden = true;
-    startLineTurn();
+    restartGame();
   });
 
   // Exportar Ficha HD en Canvas (1080x1350)
@@ -855,15 +884,20 @@
     ctx.lineWidth = 4;
     ctx.strokeRect(32, 32, SHARE_W - 64, SHARE_H - 64);
 
-    // Título
+    // Título y Subtítulo
+    const pName = (state && state.playerName ? state.playerName : "").trim();
     ctx.textAlign = "center";
     ctx.fillStyle = "#211915";
-    ctx.font = `800 52px ${FONT_FAMILY}`;
-    ctx.fillText("Mi Croquis de Morelia", SHARE_W / 2, 115);
+    ctx.font = `800 ${pName ? '48px' : '52px'} ${FONT_FAMILY}`;
+    const mainTitle = pName ? `Croquis de ${pName}` : "Mi Croquis de Morelia";
+    ctx.fillText(mainTitle, SHARE_W / 2, 115);
 
     ctx.font = `500 24px ${FONT_FAMILY}`;
-    ctx.fillStyle = "rgba(33, 25, 21, 0.6)";
-    ctx.fillText("Memoria espacial del Valle de Guayangareo", SHARE_W / 2, 155);
+    ctx.fillStyle = "rgba(33, 25, 21, 0.65)";
+    const subTitle = pName 
+      ? `Trazado de memoria en Morelia · Valle de Guayangareo`
+      : "Memoria espacial del Valle de Guayangareo";
+    ctx.fillText(subTitle, SHARE_W / 2, 155);
 
     // Sello modo difícil
     if (hard) {
@@ -978,8 +1012,11 @@
 
     // Pie de foto
     ctx.font = `500 20px ${FONT_FAMILY}`;
-    ctx.fillStyle = "rgba(33, 25, 21, 0.4)";
-    ctx.fillText("Croquis Morelia · Dibuja tu ciudad de memoria", SHARE_W / 2, 1290);
+    ctx.fillStyle = "rgba(33, 25, 21, 0.45)";
+    const footerText = pName
+      ? `Participante: ${pName} · Croquis Morelia · Dibuja tu ciudad de memoria`
+      : "Croquis Morelia · Dibuja tu ciudad de memoria";
+    ctx.fillText(footerText, SHARE_W / 2, 1290);
   }
 
   async function exportCanvasBlob() {
@@ -994,7 +1031,9 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `croquis-morelia-${isHardMode() ? 'dificil' : 'normal'}.png`;
+    const pName = (state && state.playerName ? state.playerName : "").trim();
+    const nameSlug = pName ? `-${pName.toLowerCase().replace(/[^a-z0-9]/g, '_')}` : '';
+    a.download = `croquis-morelia${nameSlug}-${isHardMode() ? 'dificil' : 'normal'}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1004,15 +1043,18 @@
   compartirBtn.addEventListener("click", async () => {
     const score = computeGlobalScore();
     const hard = isHardMode();
-    const text = hard
-      ? `Dibujé los ríos y ejes de Morelia en modo difícil y saqué ${score}/100 en Croquis Morelia!`
-      : `Dibujé los ríos y monumentos de Morelia de memoria y saqué ${score}/100 en Croquis Morelia!`;
+    const pName = (state && state.playerName ? state.playerName : "").trim();
+    const text = pName
+      ? `¡Mira mi croquis de Morelia trazado de memoria por ${pName}! Saqué ${score}/100 en Croquis Morelia (${hard ? 'Modo Difícil' : 'Modo Normal'})!`
+      : (hard
+        ? `Dibujé los ríos y ejes de Morelia en modo difícil y saqué ${score}/100 en Croquis Morelia!`
+        : `Dibujé los ríos y monumentos de Morelia de memoria y saqué ${score}/100 en Croquis Morelia!`);
 
     const blob = await exportCanvasBlob();
     if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "croquis-morelia.png", { type: "image/png" })] })) {
       try {
         await navigator.share({
-          title: "Mi Croquis de Morelia",
+          title: pName ? `Croquis de Morelia de ${pName}` : "Mi Croquis de Morelia",
           text,
           files: [new File([blob], "croquis-morelia.png", { type: "image/png" })]
         });
@@ -1021,26 +1063,51 @@
     }
 
     if (navigator.share) {
-      try { await navigator.share({ title: "Croquis Morelia", text }); } catch (e) { /* cancelado */ }
+      try { await navigator.share({ title: pName ? `Croquis de Morelia de ${pName}` : "Croquis Morelia", text }); } catch (e) { /* cancelado */ }
     } else {
       descargarBtn.click();
     }
   });
 
-  // Modal Info
-  aboutBtn.addEventListener("click", () => {
+  // Pantalla Previa de Bienvenida y Modal Acerca de
+  function openAboutModal(isWelcome = false) {
+    if (playerNameInput) {
+      playerNameInput.value = (state && state.playerName) || localStorage.getItem(LS_PLAYER_NAME) || "";
+    }
+    if (aboutStartBtnText) {
+      aboutStartBtnText.textContent = isWelcome ? "¡Comenzar a dibujar!" : "Continuar dibujando";
+    }
     aboutModal.hidden = false;
-    requestAnimationFrame(() => aboutModal.classList.add("visible"));
-  });
+    requestAnimationFrame(() => {
+      aboutModal.classList.add("visible");
+      if (isWelcome && playerNameInput) {
+        setTimeout(() => playerNameInput.focus(), 120);
+      }
+    });
+  }
 
-  aboutModal.querySelector(".modal-close-btn").addEventListener("click", () => {
+  function closeAboutModal() {
+    if (playerNameInput) {
+      const raw = playerNameInput.value.trim();
+      if (state) state.playerName = raw;
+      if (raw) {
+        localStorage.setItem(LS_PLAYER_NAME, raw);
+      }
+      saveRunState();
+    }
     aboutModal.classList.remove("visible");
     setTimeout(() => { aboutModal.hidden = true; }, 240);
-  });
+  }
 
-  aboutModal.querySelector(".about-start-btn").addEventListener("click", () => {
-    aboutModal.classList.remove("visible");
-    setTimeout(() => { aboutModal.hidden = true; }, 240);
+  aboutBtn?.addEventListener("click", () => openAboutModal(false));
+  aboutModal?.querySelector(".about-close-btn")?.addEventListener("click", closeAboutModal);
+  aboutModal?.querySelector(".modal-backdrop")?.addEventListener("click", closeAboutModal);
+  aboutStartBtn?.addEventListener("click", closeAboutModal);
+  playerNameInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      closeAboutModal();
+    }
   });
 
   // Resize Handler
@@ -1095,6 +1162,9 @@
         showFinalSheet();
       } else {
         startLineTurn();
+        if (drawnCount() === 0) {
+          openAboutModal(true);
+        }
       }
     } catch (e) {
       console.error("Error inicializando Croquis Morelia:", e);

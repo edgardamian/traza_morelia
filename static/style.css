@@ -1049,6 +1049,105 @@ html, body {
   padding-left: 18px;
 }
 
+/* ==========================================================================
+   PANTALLA PREVIA DE BIENVENIDA & CAMPO DE NOMBRE
+   ========================================================================== */
+.welcome-modal-content {
+  max-width: 480px;
+}
+
+.welcome-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.welcome-kicker {
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--cantera-rosa);
+}
+
+.welcome-name-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-top: 4px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.welcome-name-group:focus-within {
+  border-color: var(--cantera-rosa);
+  box-shadow: 0 0 0 3px var(--cantera-glow);
+}
+
+.welcome-name-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.welcome-name-label svg {
+  color: var(--cantera-rosa);
+  flex-shrink: 0;
+}
+
+.welcome-name-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-family: var(--font-body);
+  font-size: 0.96rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-sizing: border-box;
+}
+
+.welcome-name-input:focus {
+  border-color: var(--cantera-rosa);
+  background: #ffffff;
+}
+
+.welcome-name-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.modal-footer {
+  margin-top: 4px;
+}
+
+.modal-footer .about-start-btn {
+  width: 100%;
+  height: 50px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 14px rgba(184, 80, 66, 0.35);
+}
+
+.modal-footer .about-start-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(184, 80, 66, 0.45);
+}
+
 .modal-actions {
   display: flex;
   gap: 8px;

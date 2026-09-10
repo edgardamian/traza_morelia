@@ -1,24 +1,30 @@
 <!doctype html>
 <html lang="es-MX">
+
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <title>Croquis Morelia: Dibuja tu ciudad de memoria</title>
-  <meta name="description" content="Dibuja los ríos, el acueducto y los ejes emblemáticos de Morelia de memoria y descubre qué tan cerca estuviste de la realidad." />
+  <meta name="description"
+    content="Dibuja los ríos, el acueducto y los ejes emblemáticos de Morelia de memoria y descubre qué tan cerca estuviste de la realidad." />
   <meta name="theme-color" id="theme-color-meta" content="#fbf8f4" />
   <meta name="color-scheme" content="light dark" />
-  
+
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Croquis Morelia · ¿Qué tan bien te sabes Morelia?" />
   <meta property="og:description" content="Dibuja los 2 ríos y los ejes históricos de Morelia de memoria." />
   <meta property="og:locale" content="es_MX" />
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="/static/style.css" />
 </head>
+
 <body data-difficulty="normal">
   <noscript>
     <div class="noscript-msg">Croquis Morelia necesita JavaScript activo para dibujar el mapa.</div>
@@ -39,14 +45,18 @@
           <div class="line-name" id="line-name">Cargando Morelia…</div>
         </div>
         <div class="header-actions">
-          <button id="reiniciar-btn" class="icon-btn" type="button" aria-label="Reiniciar croquis" title="Reiniciar croquis completo">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <button id="reiniciar-btn" class="icon-btn" type="button" aria-label="Reiniciar croquis"
+            title="Reiniciar croquis completo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
               <polyline points="3 3 3 8 8 8"></polyline>
             </svg>
           </button>
-          <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto" title="Información">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto"
+            title="Información">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="16" x2="12" y2="12"></line>
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -56,7 +66,8 @@
       </div>
 
       <div id="utility-row">
-        <button class="hard-mode-toggle" id="anchors-toggle" type="button" aria-pressed="false" title="Alternar modo difícil a ciegas">
+        <button class="hard-mode-toggle" id="anchors-toggle" type="button" aria-pressed="false"
+          title="Alternar modo difícil a ciegas">
           <span class="hard-toggle-stripes" aria-hidden="true">
             <span></span><span></span><span></span>
           </span>
@@ -70,8 +81,10 @@
           <div class="hint-badge" id="hint-badge" title="Consejo geográfico">
             <span id="hint-text">Río Chiquito</span>
           </div>
-          <button id="borrar-btn" class="icon-btn" type="button" aria-label="Borrar trazo actual" disabled title="Borrar trazo">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button id="borrar-btn" class="icon-btn" type="button" aria-label="Borrar trazo actual" disabled
+            title="Borrar trazo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 6h18"></path>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
@@ -82,7 +95,8 @@
 
     <!-- LIENZO DE MAPA SVG -->
     <main id="map-wrap">
-      <svg id="map" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa interactivo de Morelia para dibujar de memoria">
+      <svg id="map" preserveAspectRatio="xMidYMid meet" role="img"
+        aria-label="Mapa interactivo de Morelia para dibujar de memoria">
         <defs>
           <filter id="bloom" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1" />
@@ -120,14 +134,16 @@
           </div>
           <div class="reveal-phrase-box">
             <svg class="quote-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+              <path
+                d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
             </svg>
             <p id="reveal-phrase" class="reveal-phrase">Cálculo de similitud espacial...</p>
           </div>
         </div>
         <button id="reveal-next" class="pill-btn highlight reveal-next-btn" type="button">
           <span class="reveal-next-text">Siguiente elemento</span>
-          <svg class="reveal-next-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="reveal-next-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
@@ -137,16 +153,19 @@
       <!-- CONTROLES DE ZOOM FLOTANTES -->
       <div id="zoom-controls" class="zoom-controls" role="group" aria-label="Controles de zoom del mapa">
         <button id="zoom-in-btn" class="zoom-btn" type="button" aria-label="Acercar mapa" title="Acercar mapa (+)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
         </button>
-        <button id="zoom-reset-btn" class="zoom-btn zoom-reset" type="button" aria-label="Restablecer zoom" title="Restablecer encuadre (100%)">
+        <button id="zoom-reset-btn" class="zoom-btn zoom-reset" type="button" aria-label="Restablecer zoom"
+          title="Restablecer encuadre (100%)">
           <span id="zoom-level-text">100%</span>
         </button>
         <button id="zoom-out-btn" class="zoom-btn" type="button" aria-label="Alejar mapa" title="Alejar mapa (-)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
         </button>
@@ -154,7 +173,8 @@
 
       <!-- INSTRUCCIÓN FLOTANTE DISCRETA EN LA PARTE SUPERIOR -->
       <div id="draw-prompt" class="draw-prompt">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
           <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
           <path d="M2 2l7.586 7.586"></path>
@@ -184,8 +204,8 @@
           <div class="share-card" id="share-card">
             <div class="share-card-header">
               <div class="share-card-brand">
-                <span class="brand-title">Mi Croquis de Morelia</span>
-                <span class="brand-sub">Memoria colectiva del Valle de Guayangareo</span>
+                <span class="brand-title" id="share-card-title">Mi Croquis de Morelia</span>
+                <span class="brand-sub" id="share-card-sub">Memoria colectiva del Valle de Guayangareo</span>
               </div>
               <div id="share-hard-seal" class="hard-mode-seal" hidden>
                 <span>DIFÍCIL</span>
@@ -210,14 +230,15 @@
             </div>
 
             <div class="share-card-footer">
-              <span>Croquis Morelia · Plataforma de Percepción Geográfica</span>
+              <span id="share-card-footer-text">Croquis Morelia · Plataforma de Percepción Geográfica</span>
             </div>
           </div>
 
           <!-- BOTONES DE ACCIÓN FINAL -->
           <div class="flip-face-actions">
             <button id="compartir-btn" class="pill-btn primary" type="button">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="18" cy="5" r="3"></circle>
                 <circle cx="6" cy="12" r="3"></circle>
                 <circle cx="18" cy="19" r="3"></circle>
@@ -227,14 +248,16 @@
               <span>Compartir mi Croquis</span>
             </button>
             <button id="descargar-btn" class="pill-btn secondary" type="button">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
               <span>Guardar imagen</span>
             </button>
-            <button id="flip-to-back-btn" class="flip-hint-btn" type="button">Ver desglose detallado por capa &rarr;</button>
+            <button id="flip-to-back-btn" class="flip-hint-btn" type="button">Ver desglose detallado por capa
+              &rarr;</button>
             <button id="jugar-de-nuevo-btn" class="pill-btn ghost" type="button">Trazar de nuevo</button>
           </div>
         </div>
@@ -256,34 +279,65 @@
     </div>
   </div>
 
-  <!-- MODAL ACERCA DE -->
+  <!-- MODAL ACERCA DE / PANTALLA PREVIA DE BIENVENIDA -->
   <div id="about-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="about-title">
     <div class="modal-backdrop" aria-hidden="true"></div>
-    <div class="modal-content">
+    <div class="modal-content welcome-modal-content">
       <div class="modal-header">
-        <h3 id="about-title">Croquis Morelia</h3>
-        <button class="modal-close-btn" type="button" aria-label="Cerrar modal">&times;</button>
+        <div class="welcome-header-titles">
+          <span class="welcome-kicker">Plataforma de Percepción Geográfica</span>
+          <h3 id="about-title">Croquis Morelia</h3>
+        </div>
+        <button class="modal-close-btn about-close-btn" type="button" aria-label="Cerrar modal">&times;</button>
       </div>
       <div class="modal-body">
         <p><strong>Croquis Morelia</strong> es un experimento interactivo de <em>percepción espacial y memoria colectiva</em> adaptado para Morelia, Michoacán.</p>
-        <p>Dibuja sobre el mapa en blanco los <strong>dos ríos emblemáticos</strong> (Río Grande y Río Chiquito) y los <strong>monumentos y ejes clave</strong> (el Acueducto, la Calzada San Diego, Av. Madero y el Libramiento).</p>
-        <p>Cada trazo se evalúa matemáticamente en coordenadas geográficas WGS84 contra la hidrografía y cartografía real para calcular tu fidelidad espacial.</p>
+        <p>Dibuja sobre el mapa en blanco los <strong>dos ríos emblemáticos</strong> (Río Grande y Río Chiquito) y los <strong>ejes y vialidades clave</strong> (Libramiento, Av. Madero, Av. Morelos, etc.).</p>
+        <p>Cada trazo se evalúa matemáticamente en coordenadas geográficas (WGS84) contra la cartografía real para calcular tu fidelidad espacial.</p>
+        
         <div class="about-tips">
-          <h4>Consejos:</h4>
+          <h4>Modalidades:</h4>
           <ul>
             <li>En <strong>Modo Normal</strong> tienes puntos de referencia (Catedral, Estadio, Zoológico, etc.).</li>
-            <li>En <strong>Modo Difícil</strong> las anclas desaparecen: ¡a pura memoria de moreliano!</li>
+            <li>En <strong>Modo Difícil</strong> las referencias desaparecen: ¡a pura memoria de moreliano!</li>
           </ul>
+        </div>
+
+        <!-- CAMPO PARA EL NOMBRE DEL PARTICIPANTE -->
+        <div class="welcome-name-group">
+          <label for="player-name-input" class="welcome-name-label">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>¿Cuál es tu nombre?</span>
+          </label>
+          <input 
+            type="text" 
+            id="player-name-input" 
+            class="welcome-name-input" 
+            placeholder="Ingresa tu nombre o apodo (ej. Rodrigo)" 
+            maxlength="35" 
+            autocomplete="name" 
+          />
+          <span class="welcome-name-hint">Se incluirá como autor en tu croquis y en la imagen de descarga oficial.</span>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="pill-btn primary about-start-btn" type="button">¡Comenzar a dibujar!</button>
+        <button class="pill-btn highlight about-start-btn" id="about-start-btn" type="button">
+          <span id="about-start-btn-text">¡Comenzar a dibujar!</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- MODAL CONFIRMAR CAMBIO DE MODO -->
-  <div id="confirm-mode-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-mode-title">
+  <div id="confirm-mode-modal" class="modal" hidden role="dialog" aria-modal="true"
+    aria-labelledby="confirm-mode-title">
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content">
       <h3 id="confirm-mode-title">¿Cambiar de dificultad?</h3>
@@ -309,7 +363,8 @@
   </div>
 
   <!-- MODAL REINICIAR: CANCELAR O REINICIAR TODO -->
-  <div id="confirm-reset-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-reset-title">
+  <div id="confirm-reset-modal" class="modal" hidden role="dialog" aria-modal="true"
+    aria-labelledby="confirm-reset-title">
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content">
       <div class="modal-header">
@@ -320,7 +375,8 @@
       <div class="modal-actions">
         <button id="confirm-reset-cancel-btn" class="pill-btn ghost" type="button">Cancelar</button>
         <button id="reset-all-btn" class="pill-btn highlight" type="button">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <polyline points="1 4 1 10 7 10"></polyline>
             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
           </svg>
@@ -333,4 +389,5 @@
   <script src="/static/vendor/d3.v7.min.js"></script>
   <script src="/static/app.js"></script>
 </body>
+
 </html>
