@@ -1,0 +1,468 @@
+{
+  "type": "FeatureCollection",
+  "name": "morelia_layers",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rio-chiquito",
+        "name": "Río Chiquito",
+        "kicker": "hidrografía · río sur",
+        "badge": "RCh",
+        "category": "rio",
+        "color": "#00acc1",
+        "textColor": "#007c91",
+        "description": "Cruza el suroriente de Morelia por Av. Solidaridad hasta Tres Puentes donde se une al Río Grande.",
+        "toleranceScale": 650.0,
+        "difficultyAdvice": "Nace en San José de las Torres, atraviesa Av. Solidaridad y confluye en Tres Puentes."
+      },
+      "bbox": [
+        -101.2418,
+        19.657,
+        -101.133,
+        19.7225
+      ],
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.148,
+            19.672
+          ],
+          [
+            -101.1545,
+            19.678
+          ],
+          [
+            -101.1598,
+            19.6835
+          ],
+          [
+            -101.164,
+            19.6865
+          ],
+          [
+            -101.171,
+            19.689
+          ],
+          [
+            -101.1775,
+            19.6898
+          ],
+          [
+            -101.183,
+            19.6888
+          ],
+          [
+            -101.1878,
+            19.6882
+          ],
+          [
+            -101.193,
+            19.688
+          ],
+          [
+            -101.1985,
+            19.6885
+          ],
+          [
+            -101.204,
+            19.6898
+          ],
+          [
+            -101.2095,
+            19.692
+          ],
+          [
+            -101.215,
+            19.6965
+          ],
+          [
+            -101.2195,
+            19.701
+          ],
+          [
+            -101.2235,
+            19.7045
+          ],
+          [
+            -101.2268,
+            19.7075
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rio-grande",
+        "name": "Río Grande",
+        "kicker": "hidrografía · río norte",
+        "badge": "RG",
+        "category": "rio",
+        "color": "#1976d2",
+        "textColor": "#115293",
+        "description": "El principal cauce fluvial del norte que atraviesa la cuenca de poniente a oriente rumbo a Atapaneo.",
+        "toleranceScale": 750.0,
+        "difficultyAdvice": "Pasa cerca del Estadio Morelos, cruza el norte de la ciudad y sigue hacia la salida a Charo."
+      },
+      "bbox": [
+        -101.283,
+        19.6895,
+        -101.087,
+        19.7405
+      ],
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.265,
+            19.708
+          ],
+          [
+            -101.252,
+            19.711
+          ],
+          [
+            -101.242,
+            19.7125
+          ],
+          [
+            -101.233,
+            19.7115
+          ],
+          [
+            -101.2268,
+            19.7075
+          ],
+          [
+            -101.22,
+            19.713
+          ],
+          [
+            -101.211,
+            19.7185
+          ],
+          [
+            -101.201,
+            19.721
+          ],
+          [
+            -101.192,
+            19.7225
+          ],
+          [
+            -101.183,
+            19.722
+          ],
+          [
+            -101.174,
+            19.7205
+          ],
+          [
+            -101.162,
+            19.718
+          ],
+          [
+            -101.15,
+            19.717
+          ],
+          [
+            -101.138,
+            19.716
+          ],
+          [
+            -101.122,
+            19.715
+          ],
+          [
+            -101.105,
+            19.713
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "acueducto",
+        "name": "El Acueducto",
+        "kicker": "monumento · 253 arcos",
+        "badge": "AC",
+        "category": "monumento",
+        "color": "#c45b43",
+        "textColor": "#9b3c25",
+        "description": "Los emblemáticos 253 arcos de cantera rosa construidos en el siglo XVIII por Fray Antonio de San Miguel.",
+        "toleranceScale": 220.0,
+        "difficultyAdvice": "Inicia en la zona de Los Filtros Viejos y concluye en la Fuente de las Tarascas / Villalongín."
+      },
+      "bbox": [
+        -101.1944,
+        19.69,
+        -101.1645,
+        19.7093
+      ],
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.1715,
+            19.697
+          ],
+          [
+            -101.1738,
+            19.6976
+          ],
+          [
+            -101.1765,
+            19.6985
+          ],
+          [
+            -101.1798,
+            19.6998
+          ],
+          [
+            -101.1825,
+            19.7009
+          ],
+          [
+            -101.1848,
+            19.7018
+          ],
+          [
+            -101.1865,
+            19.7022
+          ],
+          [
+            -101.1874,
+            19.7023
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "calzada-san-diego",
+        "name": "Calzada San Diego",
+        "kicker": "andador · Fray Antonio de San Miguel",
+        "badge": "CSD",
+        "category": "andador",
+        "color": "#2e7d32",
+        "textColor": "#1b5e20",
+        "description": "El andador peatonal arbolado que conecta la Fuente de las Tarascas con el Santuario de Guadalupe.",
+        "toleranceScale": 160.0,
+        "difficultyAdvice": "Línea recta arbolada entre la Fuente de las Tarascas y el Templo de San Diego."
+      },
+      "bbox": [
+        -101.1933,
+        19.6963,
+        -101.1725,
+        19.7093
+      ],
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.1873,
+            19.7023
+          ],
+          [
+            -101.1855,
+            19.7025
+          ],
+          [
+            -101.1838,
+            19.7027
+          ],
+          [
+            -101.182,
+            19.7029
+          ],
+          [
+            -101.1802,
+            19.7031
+          ],
+          [
+            -101.1785,
+            19.7033
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "av-madero",
+        "name": "Avenida Madero",
+        "kicker": "eje vial · Centro Histórico",
+        "badge": "MAD",
+        "category": "eje",
+        "color": "#d97706",
+        "textColor": "#b45309",
+        "description": "La arteria principal de Morelia que divide la ciudad y pasa frente a la majestuosa Catedral.",
+        "toleranceScale": 450.0,
+        "difficultyAdvice": "Eje recto de poniente a oriente: del Obelisco Lázaro Cárdenas hasta la salida a Charo pasando por Catedral."
+      },
+      "bbox": [
+        -101.24,
+        19.689,
+        -101.136,
+        19.7144
+      ],
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.228,
+            19.7015
+          ],
+          [
+            -101.218,
+            19.7016
+          ],
+          [
+            -101.2114,
+            19.7018
+          ],
+          [
+            -101.205,
+            19.702
+          ],
+          [
+            -101.198,
+            19.7022
+          ],
+          [
+            -101.1923,
+            19.7024
+          ],
+          [
+            -101.1874,
+            19.7023
+          ],
+          [
+            -101.181,
+            19.7022
+          ],
+          [
+            -101.173,
+            19.702
+          ],
+          [
+            -101.16,
+            19.7015
+          ],
+          [
+            -101.148,
+            19.701
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "libramiento",
+        "name": "El Libramiento",
+        "kicker": "anillo vial · Paseo de la República",
+        "badge": "LIB",
+        "category": "periferico",
+        "color": "#7c3aed",
+        "textColor": "#6d28d9",
+        "description": "El anillo periférico que circunvala la mancha urbana de Morelia conectando todas las salidas.",
+        "toleranceScale": 850.0,
+        "difficultyAdvice": "El gran circuito circular que abraza la ciudad conectando las salidas a Quiroga, Salamanca, Charo y Pátzcuaro."
+      },
+      "bbox": [
+        -101.2655,
+        19.646,
+        -101.125,
+        19.761
+      ],
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.242,
+            19.703
+          ],
+          [
+            -101.2435,
+            19.715
+          ],
+          [
+            -101.238,
+            19.728
+          ],
+          [
+            -101.225,
+            19.736
+          ],
+          [
+            -101.208,
+            19.739
+          ],
+          [
+            -101.192,
+            19.7375
+          ],
+          [
+            -101.175,
+            19.732
+          ],
+          [
+            -101.158,
+            19.723
+          ],
+          [
+            -101.147,
+            19.709
+          ],
+          [
+            -101.148,
+            19.692
+          ],
+          [
+            -101.155,
+            19.68
+          ],
+          [
+            -101.167,
+            19.672
+          ],
+          [
+            -101.182,
+            19.668
+          ],
+          [
+            -101.198,
+            19.67
+          ],
+          [
+            -101.214,
+            19.675
+          ],
+          [
+            -101.231,
+            19.684
+          ],
+          [
+            -101.239,
+            19.694
+          ],
+          [
+            -101.242,
+            19.703
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "clientId": "test-user-morelia",
+  "timestamp": 1787256275,
+  "isoDate": "2026-08-20T20:04:35Z",
+  "globalScore": 26,
+  "perLineScores": {
+    "acueducto": 93,
+    "rio-chiquito": 60
+  },
+  "lines": {
+    "acueducto": [
+      [
+        -101.1715,
+        19.697
+      ],
+      [
+        -101.1874,
+        19.7023
+      ]
+    ],
+    "rio-chiquito": [
+      [
+        -101.148,
+        19.672
+      ],
+      [
+        -101.193,
+        19.688
+      ],
+      [
+        -101.2268,
+        19.7075
+      ]
+    ]
+  },
+  "metadata": {
+    "difficulty": "normal"
+  }
+}

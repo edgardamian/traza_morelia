@@ -1,0 +1,30 @@
+{
+"type": "FeatureCollection",
+"name": "morelia_anchors",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "name": "Catedral de Morelia", "category": "centro" }, "geometry": { "type": "Point", "coordinates": [ -101.192291253855956, 19.702400675084892 ] } },
+{ "type": "Feature", "properties": { "name": "Las Tarascas", "category": "monumento" }, "geometry": { "type": "Point", "coordinates": [ -101.182408834844438, 19.702854549053729 ] } },
+{ "type": "Feature", "properties": { "name": "Estadio Morelos", "category": "norte" }, "geometry": { "type": "Point", "coordinates": [ -101.233363471941075, 19.718740451084763 ] } },
+{ "type": "Feature", "properties": { "name": "Zoológico", "category": "sur" }, "geometry": { "type": "Point", "coordinates": [ -101.193971272394094, 19.685761771483236 ] } },
+{ "type": "Feature", "properties": { "name": "Bosque Cuauhtémoc", "category": "parque" }, "geometry": { "type": "Point", "coordinates": [ -101.180020398453451, 19.699349761419647 ] } },
+{ "type": "Feature", "properties": { "name": "Monumento", "category": "poniente" }, "geometry": { "type": "Point", "coordinates": [ -101.207124448643683, 19.701990525756266 ] } },
+{ "type": "Feature", "properties": { "name": "Deportivo Venustiano", "category": "oriente" }, "geometry": { "type": "Point", "coordinates": [ -101.168199788019166, 19.699248960307362 ] } },
+{ "type": "Feature", "properties": { "name": "Deportivo Bicentenario", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.190221471017026, 19.729536334512787 ] } },
+{ "type": "Feature", "properties": { "name": "Tenencia Morelos", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.235964912475922, 19.646198964284565 ] } },
+{ "type": "Feature", "properties": { "name": "El planetario", "category": "sur" }, "geometry": { "type": "Point", "coordinates": [ -101.182654667521248, 19.68388015072053 ] } },
+{ "type": "Feature", "properties": { "name": "Los Filtros Viejos", "category": "rio" }, "geometry": { "type": "Point", "coordinates": [ -101.153079900342718, 19.677140408458385 ] } },
+{ "type": "Feature", "properties": { "name": "Plaza Las Américas", "category": "camelinas" }, "geometry": { "type": "Point", "coordinates": [ -101.157991995381479, 19.689162129004416 ] } },
+{ "type": "Feature", "properties": { "name": "Manantial Mintzita", "category": "agua" }, "geometry": { "type": "Point", "coordinates": [ -101.272784302054944, 19.64552196745791 ] } },
+{ "type": "Feature", "properties": { "name": "Universidad Miachoacana", "category": "universidad" }, "geometry": { "type": "Point", "coordinates": [ -101.206427166684335, 19.689196917632035 ] } },
+{ "type": "Feature", "properties": { "name": "Mercado de Abastos", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.168421550466249, 19.716700992881457 ] } },
+{ "type": "Feature", "properties": { "name": "Presa de Coitzio", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.262654757388162, 19.6152264011174 ] } },
+{ "type": "Feature", "properties": { "name": "Ciudad Industrial", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.141125106653703, 19.729927119621657 ] } },
+{ "type": "Feature", "properties": { "name": "Central de Autobuses", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.225430931893641, 19.719410129330729 ] } },
+{ "type": "Feature", "properties": { "name": "Panteón Municipal", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.209273164903877, 19.69377177981702 ] } },
+{ "type": "Feature", "properties": { "name": "Arboretum", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.220214912476337, 19.699276634185775 ] } },
+{ "type": "Feature", "properties": { "name": "Policia y Tráncito", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.234346587233162, 19.681481427875667 ] } },
+{ "type": "Feature", "properties": { "name": "Tecnológico de Morelia", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.185329596943561, 19.722113709427749 ] } },
+{ "type": "Feature", "properties": { "name": "Pabellon Don Vasco ", "category": null }, "geometry": { "type": "Point", "coordinates": [ -101.182428504710643, 19.727181063796525 ] } }
+]
+}
