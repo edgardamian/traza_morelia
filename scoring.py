@@ -202,39 +202,38 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
         mean_error = mean_dist_rev
         max_error = max_dist_rev
         res_truth_best = res_truth_rev
-        
+    # Longitudes reales de los trazos
+    len_drawn = path_length_meters(drawn_points)
+    len_truth = path_length_meters(truth_points)
+
     # =========================================================================
     # PARÁMETROS DE CALIBRACIÓN: 3 INDICADORES (LARGO, FORMA Y UBICACIÓN)
     # Modifica estos valores para ajustar qué tan estricta es la evaluación.
     # =========================================================================
     # 1. INDICADOR DE LARGO (0 a 100 pts):
-    #    ¿Qué tan completa es la longitud del trazo frente a la real?
-    #    Si dibuja al menos el 70% de la longitud real, obtiene 100 pts en largo.
-    UMBRAL_LARGO_COMPLETO = 0.70
+    #    Si dibuja al menos el 80% de la longitud real, obtiene 100 pts en largo.
+    UMBRAL_LARGO_COMPLETO = 0.80
 
     # 2. INDICADOR DE UBICACIÓN (0 a 100 pts):
-    #    ¿Qué tan cerca está de donde pasa en Morelia?
-    #    - GRACIA_UBICACION_METROS: Si está a menos de esta distancia (ej. 150m = ~1 cuadra), saca 100 pts.
-    #    - TOLERANCIA_UBICACION_METROS: Margen de desvío aceptable según la escala de la capa.
-    GRACIA_UBICACION_METROS = 150.0
-    TOLERANCIA_UBICACION_METROS = max(tolerance_scale * 3.0, 900.0)
+    #    - GRACIA_UBICACION_METROS: Si está a menos de esta distancia (100m = ~1 cuadra), saca 100 pts.
+    #    - TOLERANCIA_UBICACION_METROS: Proporcional al tamaño real (8% de la longitud, mín. 600m).
+    #      Para una calle corta de 2 km = 600m. Para el Libramiento de 26 km = ~2,100m.
+    GRACIA_UBICACION_METROS = 100.0
+    TOLERANCIA_UBICACION_METROS = max(len_truth * 0.08, 600.0)
 
-    # 3. INDICADOR DE FORMA (0 a 100 pts):
-    #    ¿Tiene la silueta, curvatura y orientación correcta? (Evaluada independientemente de la ubicación).
+    # 3. INDICADOR DE FORMA (0 a 100 pts): 
     #    - GRACIA_FORMA_METROS: Margen de flexibilidad para pequeñas irregularidades al dibujar a mano.
-    #    - TOLERANCIA_FORMA_METROS: Tolerancia para la silueta y curvas.
+    #    - TOLERANCIA_FORMA_METROS: Tolerancia para la silueta (6% de la longitud, mín. 500m).
     GRACIA_FORMA_METROS = 100.0
-    TOLERANCIA_FORMA_METROS = max(tolerance_scale * 2.0, 600.0)
+    TOLERANCIA_FORMA_METROS = max(len_truth * 0.06, 500.0)
 
-    # 4. PESOS DE CADA INDICADOR EN LA CALIFICACIÓN FINAL (deben sumar 1.0 = 100%):
-    PESO_UBICACION = 0.40   # 40% Ubicación geográfica (dónde está)
-    PESO_FORMA     = 0.35   # 35% Forma y curvatura (cómo es)
-    PESO_LARGO     = 0.25   # 25% Largo del trazo (cuánto abarca)
+    # 4. PESOS DE CADA INDICADOR EN LA CALIFICACIÓN FINAL
+    PESO_UBICACION = 0.65  
+    PESO_FORMA     = 0.20   
+    PESO_LARGO     = 0.15   
     # =========================================================================
 
     # 1. CÁLCULO DEL INDICADOR DE LARGO
-    len_drawn = path_length_meters(drawn_points)
-    len_truth = path_length_meters(truth_points)
     ratio_largo = (min(len_drawn, len_truth) / max(len_drawn, len_truth)) if max(len_drawn, len_truth) > 0 else 0.0
     
     if ratio_largo >= UMBRAL_LARGO_COMPLETO:
