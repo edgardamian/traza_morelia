@@ -172,36 +172,62 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
     res_drawn = resample_polyline(drawn_points, num_samples)
     res_truth = resample_polyline(truth_points, num_samples)
     
-    # 1. Distancia en sentido directo (A -> B)
-    sum_dist_fwd = 0.0
-    max_dist_fwd = 0.0
-    for i in range(num_samples):
-        d = haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth[i][0], res_truth[i][1])
-        sum_dist_fwd += d
-        if d > max_dist_fwd:
-            max_dist_fwd = d
-    mean_dist_fwd = sum_dist_fwd / num_samples
-    
-    # 2. Distancia en sentido inverso (B -> A)
-    res_truth_rev = res_truth[::-1]
-    sum_dist_rev = 0.0
-    max_dist_rev = 0.0
-    for i in range(num_samples):
-        d = haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth_rev[i][0], res_truth_rev[i][1])
-        sum_dist_rev += d
-        if d > max_dist_rev:
-            max_dist_rev = d
-    mean_dist_rev = sum_dist_rev / num_samples
-    
-    # Seleccionar la mejor alineación de sentido (directo vs inverso)
-    if mean_dist_fwd <= mean_dist_rev:
-        mean_error = mean_dist_fwd
-        max_error = max_dist_fwd
+    # Detectar si es un circuito cerrado o anillo (inicio y fin cercanos a menos de 600m, ej. El Libramiento)
+    is_loop = haversine_distance_meters(truth_points[0][0], truth_points[0][1], truth_points[-1][0], truth_points[-1][1]) < 600.0
+
+    if is_loop:
+        # En un circuito cerrado, el usuario puede empezar a dibujar en cualquier salida (Quiroga, Salamanca, Charo...).
+        # Probamos el desfase de inicio óptimo a lo largo del anillo para evaluar la precisión real sin desfase artificial.
+        best_mean = float("inf")
+        best_max = float("inf")
         res_truth_best = res_truth
+
+        for candidate in [res_truth, res_truth[::-1]]:
+            for k in range(num_samples):
+                shifted = candidate[k:] + candidate[:k]
+                sum_d = 0.0
+                max_d = 0.0
+                for i in range(num_samples):
+                    d = haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], shifted[i][0], shifted[i][1])
+                    sum_d += d
+                    if d > max_d:
+                        max_d = d
+                mean_d = sum_d / num_samples
+                if mean_d < best_mean:
+                    best_mean = mean_d
+                    best_max = max_d
+                    res_truth_best = shifted
+        mean_error = best_mean
+        max_error = best_max
     else:
-        mean_error = mean_dist_rev
-        max_error = max_dist_rev
-        res_truth_best = res_truth_rev
+        # En calles y ríos con extremos definidos: evaluar sentido directo vs inverso
+        sum_dist_fwd = 0.0
+        max_dist_fwd = 0.0
+        for i in range(num_samples):
+            d = haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth[i][0], res_truth[i][1])
+            sum_dist_fwd += d
+            if d > max_dist_fwd:
+                max_dist_fwd = d
+        mean_dist_fwd = sum_dist_fwd / num_samples
+
+        res_truth_rev = res_truth[::-1]
+        sum_dist_rev = 0.0
+        max_dist_rev = 0.0
+        for i in range(num_samples):
+            d = haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth_rev[i][0], res_truth_rev[i][1])
+            sum_dist_rev += d
+            if d > max_dist_rev:
+                max_dist_rev = d
+        mean_dist_rev = sum_dist_rev / num_samples
+
+        if mean_dist_fwd <= mean_dist_rev:
+            mean_error = mean_dist_fwd
+            max_error = max_dist_fwd
+            res_truth_best = res_truth
+        else:
+            mean_error = mean_dist_rev
+            max_error = max_dist_rev
+            res_truth_best = res_truth_rev
     # Longitudes reales de los trazos
     len_drawn = path_length_meters(drawn_points)
     len_truth = path_length_meters(truth_points)
@@ -218,7 +244,7 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
     #    - GRACIA_UBICACION_METROS: Si está a menos de esta distancia (100m = ~1 cuadra), saca 100 pts.
     #    - TOLERANCIA_UBICACION_METROS: Proporcional al tamaño real (8% de la longitud, mín. 600m).
     #      Para una calle corta de 2 km = 600m. Para el Libramiento de 26 km = ~2,100m.
-    GRACIA_UBICACION_METROS = 100.0
+    GRACIA_UBICACION_METROS = 200.0
     TOLERANCIA_UBICACION_METROS = max(len_truth * 0.08, 600.0)
 
     # 3. INDICADOR DE FORMA (0 a 100 pts): 
