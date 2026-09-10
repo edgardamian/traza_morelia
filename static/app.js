@@ -159,7 +159,6 @@
 
   const reiniciarBtn = document.getElementById("reiniciar-btn");
   const confirmResetModal = document.getElementById("confirm-reset-modal");
-  const resetCurrentBtn = document.getElementById("reset-current-btn");
   const resetAllBtn = document.getElementById("reset-all-btn");
   const confirmResetCancelBtn = document.getElementById("confirm-reset-cancel-btn");
   const confirmResetCloseBtn = confirmResetModal?.querySelector(".confirm-reset-close");
@@ -511,37 +510,16 @@
   }
 
   reiniciarBtn?.addEventListener("click", () => {
-    openConfirmResetModal();
+    if (drawnCount() === 0 && currentStrokePoints.length === 0 && !revealActive) {
+      restartGame();
+    } else {
+      openConfirmResetModal();
+    }
   });
 
   confirmResetCancelBtn?.addEventListener("click", closeConfirmResetModal);
   confirmResetCloseBtn?.addEventListener("click", closeConfirmResetModal);
   confirmResetModal?.querySelector(".modal-backdrop")?.addEventListener("click", closeConfirmResetModal);
-
-  function retryCurrentElement() {
-    const lid = currentLineId();
-    if (lid) {
-      delete state.drawnLines[lid];
-      delete state.perLineScores[lid];
-      delete state.perLineTiers[lid];
-      delete state.perLinePhrases[lid];
-      saveRunState();
-    }
-    currentStrokePoints = [];
-    isDrawing = false;
-    revealBanner.classList.remove("visible");
-    revealActive = false;
-    anchorsToggle.disabled = false;
-    clearLayer(gUserdraw);
-    updateListoState();
-    updateBorrarState();
-    startLineTurn();
-  }
-
-  resetCurrentBtn?.addEventListener("click", () => {
-    closeConfirmResetModal();
-    retryCurrentElement();
-  });
 
   resetAllBtn?.addEventListener("click", () => {
     closeConfirmResetModal();

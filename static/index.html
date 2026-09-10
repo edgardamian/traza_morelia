@@ -308,23 +308,17 @@
     </div>
   </div>
 
-  <!-- MODAL REINICIAR: CANCELAR, REINICIAR CROQUIS ACTUAL O REINICIAR TODO -->
+  <!-- MODAL REINICIAR: CANCELAR O REINICIAR TODO -->
   <div id="confirm-reset-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-reset-title">
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="confirm-reset-title">Reiniciar</h3>
+        <h3 id="confirm-reset-title">¿Reiniciar todo el croquis?</h3>
         <button class="modal-close-btn confirm-reset-close" type="button" aria-label="Cerrar modal">&times;</button>
       </div>
-      <p id="confirm-reset-body">Selecciona si deseas reiniciar únicamente el trazo de este elemento o reiniciar la partida completa desde el inicio.</p>
-      <div class="modal-actions modal-actions-stacked">
-        <button id="reset-current-btn" class="pill-btn secondary" type="button">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-            <polyline points="3 3 3 8 8 8"></polyline>
-          </svg>
-          <span>Reiniciar croquis actual</span>
-        </button>
+      <p id="confirm-reset-body">Se borrarán todos tus trazos y volverás a empezar desde el primer elemento.</p>
+      <div class="modal-actions">
+        <button id="confirm-reset-cancel-btn" class="pill-btn ghost" type="button">Cancelar</button>
         <button id="reset-all-btn" class="pill-btn highlight" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="1 4 1 10 7 10"></polyline>
@@ -332,7 +326,6 @@
           </svg>
           <span>Reiniciar todo</span>
         </button>
-        <button id="confirm-reset-cancel-btn" class="pill-btn ghost" type="button">Cancelar</button>
       </div>
     </div>
   </div>
