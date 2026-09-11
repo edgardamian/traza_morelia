@@ -148,7 +148,92 @@ def pick_phrase_and_tier(score: int) -> Tuple[str, str]:
         if score >= tier["min"]:
             phrase = random.choice(tier["phrases"])
             return phrase, tier["title"]
-    return "¡Sigue practicando tu croquis de Morelia!", "Visitante"
+    return "¡Sigue paseando por Morelia es la única forma de conocerla!", "Turista primeriso"
+
+def get_cumulative_distances(coords: List[List[float]]) -> List[float]:
+    """Calcula la distancia acumulada en metros para cada vértice de una polilínea."""
+    cum = [0.0]
+    for i in range(1, len(coords)):
+        d = haversine_distance_meters(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1])
+        cum.append(cum[-1] + d)
+    return cum
+
+def project_point_on_polyline(px: float, py: float, coords: List[List[float]], cum_dist: List[float]) -> Tuple[float, float]:
+    """
+    Proyecta ortogonalmente un punto (px, py) sobre la polilínea coords.
+    Retorna:
+    - Distancia mínima en metros al segmento más cercano.
+    - Fracción de longitud de arco (0.0 a 1.0) a lo largo de la polilínea.
+    """
+    best_dist = float("inf")
+    best_arc = 0.0
+    total_len = cum_dist[-1]
+    
+    for i in range(len(coords) - 1):
+        ax, ay = coords[i]
+        bx, by = coords[i+1]
+        dx = (bx - ax) * 111000.0 * math.cos(py * math.pi / 180.0)
+        dy = (by - ay) * 111000.0
+        dpx = (px - ax) * 111000.0 * math.cos(py * math.pi / 180.0)
+        dpy = (py - ay) * 111000.0
+        seg_len_sq = dx * dx + dy * dy
+        if seg_len_sq == 0.0:
+            d = math.hypot(dpx, dpy)
+            t = 0.0
+        else:
+            t = max(0.0, min(1.0, (dpx * dx + dpy * dy) / seg_len_sq))
+            proj_x = dpx - t * dx
+            proj_y = dpy - t * dy
+            d = math.hypot(proj_x, proj_y)
+            
+        if d < best_dist:
+            best_dist = d
+            seg_len = math.sqrt(seg_len_sq)
+            best_arc = cum_dist[i] + t * seg_len
+            
+    frac = best_arc / total_len if total_len > 0.0 else 0.0
+    return best_dist, frac
+
+def extract_subpolyline_by_arc(coords: List[List[float]], cum_dist: List[float], start_frac: float, end_frac: float) -> List[List[float]]:
+    """Extrae el sub-tramo continuo de la polilínea entre dos fracciones de longitud de arco."""
+    total_len = cum_dist[-1]
+    d_start = start_frac * total_len
+    d_end = end_frac * total_len
+    if d_start > d_end:
+        d_start, d_end = d_end, d_start
+        reverse = True
+    else:
+        reverse = False
+        
+    pts = []
+    # Punto de inicio interpolado
+    for i in range(len(coords) - 1):
+        if cum_dist[i] <= d_start <= cum_dist[i+1]:
+            seg_len = cum_dist[i+1] - cum_dist[i]
+            t = (d_start - cum_dist[i]) / seg_len if seg_len > 0.0 else 0.0
+            pts.append([coords[i][0] + t * (coords[i+1][0] - coords[i][0]),
+                        coords[i][1] + t * (coords[i+1][1] - coords[i][1])])
+            break
+            
+    # Vértices intermedios reales
+    for i in range(len(coords)):
+        if d_start < cum_dist[i] < d_end:
+            pts.append(coords[i])
+            
+    # Punto final interpolado
+    for i in range(len(coords) - 1):
+        if cum_dist[i] <= d_end <= cum_dist[i+1]:
+            seg_len = cum_dist[i+1] - cum_dist[i]
+            t = (d_end - cum_dist[i]) / seg_len if seg_len > 0.0 else 0.0
+            pts.append([coords[i][0] + t * (coords[i+1][0] - coords[i][0]),
+                        coords[i][1] + t * (coords[i+1][1] - coords[i][1])])
+            break
+            
+    if len(pts) < 2:
+        pts = [coords[0], coords[-1]]
+    if reverse:
+        pts = pts[::-1]
+    return pts
 
 def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[float]], tolerance_scale: float = 500.0) -> Dict[str, Any]:
     """
@@ -170,105 +255,94 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
         
     num_samples = 100
     res_drawn = resample_polyline(drawn_points, num_samples)
-    res_truth = resample_polyline(truth_points, num_samples)
+    len_drawn = path_length_meters(drawn_points)
+    len_truth = path_length_meters(truth_points)
     
     # Detectar si es un circuito cerrado o anillo (inicio y fin cercanos a menos de 600m, ej. El Libramiento)
     is_loop = haversine_distance_meters(truth_points[0][0], truth_points[0][1], truth_points[-1][0], truth_points[-1][1]) < 600.0
 
     if is_loop:
-        # En un circuito cerrado, el usuario puede empezar a dibujar en cualquier salida (Quiroga, Salamanca, Charo...).
-        # Probamos el desfase de inicio óptimo a lo largo del anillo para evaluar la precisión real sin desfase artificial.
+        res_truth = resample_polyline(truth_points, num_samples)
         best_mean = float("inf")
-        best_max = float("inf")
         res_truth_best = res_truth
 
         for candidate in [res_truth, res_truth[::-1]]:
             for k in range(num_samples):
                 shifted = candidate[k:] + candidate[:k]
-                sum_d = 0.0
-                max_d = 0.0
-                for i in range(num_samples):
-                    d = haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], shifted[i][0], shifted[i][1])
-                    sum_d += d
-                    if d > max_d:
-                        max_d = d
+                sum_d = sum(haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], shifted[i][0], shifted[i][1]) for i in range(num_samples))
                 mean_d = sum_d / num_samples
                 if mean_d < best_mean:
                     best_mean = mean_d
-                    best_max = max_d
                     res_truth_best = shifted
         mean_error = best_mean
-        max_error = best_max
+        max_error = max(haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth_best[i][0], res_truth_best[i][1]) for i in range(num_samples))
     else:
-        # En calles y ríos con extremos definidos: evaluar sentido directo vs inverso
-        sum_dist_fwd = 0.0
-        max_dist_fwd = 0.0
-        for i in range(num_samples):
-            d = haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth[i][0], res_truth[i][1])
-            sum_dist_fwd += d
-            if d > max_dist_fwd:
-                max_dist_fwd = d
-        mean_dist_fwd = sum_dist_fwd / num_samples
-
-        res_truth_rev = res_truth[::-1]
-        sum_dist_rev = 0.0
-        max_dist_rev = 0.0
-        for i in range(num_samples):
-            d = haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth_rev[i][0], res_truth_rev[i][1])
-            sum_dist_rev += d
-            if d > max_dist_rev:
-                max_dist_rev = d
-        mean_dist_rev = sum_dist_rev / num_samples
-
-        if mean_dist_fwd <= mean_dist_rev:
-            mean_error = mean_dist_fwd
-            max_error = max_dist_fwd
-            res_truth_best = res_truth
+        # 1. Comparación contra el trazo completo (sentido directo e inverso)
+        res_truth_full = resample_polyline(truth_points, num_samples)
+        err_fwd_full = sum(haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth_full[i][0], res_truth_full[i][1]) for i in range(num_samples)) / num_samples
+        res_truth_rev = res_truth_full[::-1]
+        err_rev_full = sum(haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth_rev[i][0], res_truth_rev[i][1]) for i in range(num_samples)) / num_samples
+        best_full = min(err_fwd_full, err_rev_full)
+        best_truth = res_truth_full if err_fwd_full <= err_rev_full else res_truth_rev
+        
+        # 2. Alineación por sub-tramo: detecta si el usuario dibujó con gran precisión un tramo sustancial
+        # (ej. trazar el Río Chiquito desde Monumento a Filtros Viejos sin desfase artificial por no trazar Tres Puentes)
+        cum = get_cumulative_distances(truth_points)
+        d0, s0 = project_point_on_polyline(res_drawn[0][0], res_drawn[0][1], truth_points, cum)
+        d1, s1 = project_point_on_polyline(res_drawn[-1][0], res_drawn[-1][1], truth_points, cum)
+        
+        arc_coverage = abs(s1 - s0)
+        max_endpoint_dist = max(d0, d1)
+        if arc_coverage > 0.10 and max_endpoint_dist < tolerance_scale * 2.5:
+            sub_truth = extract_subpolyline_by_arc(truth_points, cum, s0, s1)
+            res_sub = resample_polyline(sub_truth, num_samples)
+            err_fwd_sub = sum(haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_sub[i][0], res_sub[i][1]) for i in range(num_samples)) / num_samples
+            err_rev_sub = sum(haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_sub[::-1][i][0], res_sub[::-1][i][1]) for i in range(num_samples)) / num_samples
+            best_sub = min(err_fwd_sub, err_rev_sub)
+            if best_sub < best_full:
+                mean_error = best_sub
+                res_truth_best = res_sub if err_fwd_sub <= err_rev_sub else res_sub[::-1]
+            else:
+                mean_error = best_full
+                res_truth_best = best_truth
         else:
-            mean_error = mean_dist_rev
-            max_error = max_dist_rev
-            res_truth_best = res_truth_rev
-    # Longitudes reales de los trazos
-    len_drawn = path_length_meters(drawn_points)
-    len_truth = path_length_meters(truth_points)
+            mean_error = best_full
+            res_truth_best = best_truth
+            
+        max_error = max(haversine_distance_meters(res_drawn[i][0], res_drawn[i][1], res_truth_best[i][0], res_truth_best[i][1]) for i in range(num_samples))
 
     # =========================================================================
     # PARÁMETROS DE CALIBRACIÓN: 3 INDICADORES (LARGO, FORMA Y UBICACIÓN)
-    # Modifica estos valores para ajustar qué tan estricta es la evaluación.
     # =========================================================================
-    # 1. INDICADOR DE LARGO (0 a 100 pts):
-    #    Si dibuja al menos el 80% de la longitud real, obtiene 100 pts en largo.
-    UMBRAL_LARGO_COMPLETO = 0.60    
+    # 1. INDICADOR DE LARGO:
+    #    Si dibuja al menos el 50% de la longitud real, obtiene 100 pts en largo
+    #    (reconoce el tramo urbano principal en su mapa mental sin penalización).
+    UMBRAL_LARGO_COMPLETO = 0.50
 
-    # 2. INDICADOR DE UBICACIÓN (0 a 100 pts):
-    #    - GRACIA_UBICACION_METROS: Si está a menos de esta distancia (100m = ~1 cuadra), saca 100 pts.
-    #    - TOLERANCIA_UBICACION_METROS: Proporcional al tamaño real (8% de la longitud, mín. 600m).
-    #      Para una calle corta de 2 km = 600m. Para el Libramiento de 26 km = ~2,100m.
-    GRACIA_UBICACION_METROS = 100
+    # 2. INDICADOR DE UBICACIÓN (Distancia al lugar real en Morelia):
+    #    - GRACIA_UBICACION_METROS: Si está a menos de 100m (~1 cuadra), saca 100 pts.
+    #    - TOLERANCIA_UBICACION_METROS: Proporcional al tamaño real (8% de longitud, mín 600m).
+    GRACIA_UBICACION_METROS = 100.0
     TOLERANCIA_UBICACION_METROS = max(len_truth * 0.08, 600.0)
 
-    # 3. INDICADOR DE FORMA (0 a 100 pts): 
-    #    - GRACIA_FORMA_METROS: Margen de flexibilidad para pequeñas irregularidades al dibujar a mano.
-    #    - TOLERANCIA_FORMA_METROS: Tolerancia para la silueta (6% de la longitud, mín. 500m).
-    GRACIA_FORMA_METROS = 100.0
+    # 3. INDICADOR DE FORMA:
+    #    - GRACIA_FORMA_METROS: Margen de flexibilidad para dibujo a mano alzada.
+    #    - TOLERANCIA_FORMA_METROS: Margen de silueta (6% de longitud, mín 500m).
+    GRACIA_FORMA_METROS = 200.0
     TOLERANCIA_FORMA_METROS = max(len_truth * 0.06, 500.0)
 
     # 4. PESOS DE CADA INDICADOR EN LA CALIFICACIÓN FINAL
     PESO_UBICACION = 0.80
-    PESO_FORMA     = 0.15 
-    PESO_LARGO     = 0.05   
+    PESO_FORMA     = 0.10
+    PESO_LARGO     = 0.10
     # =========================================================================
 
     # 1. CÁLCULO DEL INDICADOR DE LARGO
-    ratio_largo = (min(len_drawn, len_truth) / max(len_drawn, len_truth)) if max(len_drawn, len_truth) > 0 else 0.0
-    
-    if ratio_largo >= UMBRAL_LARGO_COMPLETO:
-        score_largo = 100.0
-    else:
-        score_largo = 100.0 * (ratio_largo / UMBRAL_LARGO_COMPLETO)
+    ratio_largo = (min(len_drawn, len_truth) / max(len_drawn, len_truth)) if max(len_drawn, len_truth) > 0.0 else 0.0
+    score_largo = 100.0 * min(1.0, ratio_largo / UMBRAL_LARGO_COMPLETO) if UMBRAL_LARGO_COMPLETO > 0.0 else 100.0
     score_largo = max(0.0, min(100.0, score_largo))
 
-    # 2. CÁLCULO DEL INDICADOR DE UBICACIÓN (Distancia al lugar real en Morelia)
+    # 2. CÁLCULO DEL INDICADOR DE UBICACIÓN
     error_ubicacion = max(0.0, mean_error - GRACIA_UBICACION_METROS)
     score_ubicacion = 100.0 * math.exp(-math.pow(error_ubicacion / TOLERANCIA_UBICACION_METROS, 1.8))
     score_ubicacion = max(0.0, min(100.0, score_ubicacion))
@@ -282,10 +356,10 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
     cos_lat = math.cos((cy_drawn + cy_truth) * 0.5 * math.pi / 180.0)
     sum_shape_err = 0.0
     for i in range(num_samples):
-        dx_d = (res_drawn[i][0] - cx_drawn) * 111000 * cos_lat
-        dy_d = (res_drawn[i][1] - cy_drawn) * 111000
-        dx_t = (res_truth_best[i][0] - cx_truth) * 111000 * cos_lat
-        dy_t = (res_truth_best[i][1] - cy_truth) * 111000
+        dx_d = (res_drawn[i][0] - cx_drawn) * 111000.0 * cos_lat
+        dy_d = (res_drawn[i][1] - cy_drawn) * 111000.0
+        dx_t = (res_truth_best[i][0] - cx_truth) * 111000.0 * cos_lat
+        dy_t = (res_truth_best[i][1] - cy_truth) * 111000.0
         sum_shape_err += math.hypot(dx_d - dx_t, dy_d - dy_t)
 
     shape_error_meters = sum_shape_err / num_samples
@@ -295,7 +369,10 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
 
     # 4. CALIFICACIÓN FINAL COMBINADA
     score_base = (PESO_UBICACION * score_ubicacion) + (PESO_FORMA * score_forma) + (PESO_LARGO * score_largo)
-    factor_completitud = min(1.0, ratio_largo / UMBRAL_LARGO_COMPLETO) if UMBRAL_LARGO_COMPLETO > 0 else 1.0
+    
+    # Factor de completitud con curva cóncava suave:
+    # No castiga de forma desmedida trazos reales de 50%-70%, pero neutraliza trazos de trampa diminutos (<50m).
+    factor_completitud = min(1.0, math.sqrt(ratio_largo / UMBRAL_LARGO_COMPLETO)) if UMBRAL_LARGO_COMPLETO > 0.0 else 1.0
     final_score = int(round(score_base * factor_completitud))
     final_score = max(0, min(100, final_score))
 

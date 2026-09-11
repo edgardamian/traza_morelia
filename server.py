@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from scoring import evaluate_stroke, path_length_meters, pick_phrase_and_tier
 
-app = FastAPI(title="Croquis Morelia API", description="API de evaluación geográfica y captura de memoria urbana para Morelia")
+app = FastAPI(title="Mi Croquis Mental de Morelia API", description="API de evaluación geográfica y captura de memoria urbana para Morelia")
 
 app.add_middleware(
     CORSMiddleware,
@@ -80,23 +80,66 @@ def find_layer(layers: List[Dict[str, Any]], query_id: str) -> Any:
     return None
 
 
+def articular_nombre(name: str) -> str:
+    """Genera la articulación gramatical correcta en español para el nombre de la vía o elemento."""
+    n = str(name).strip()
+    n_lower = n.lower()
+    if n_lower.startswith("el "):
+        return "del " + n[3:]
+    elif n_lower.startswith("la "):
+        return "de la " + n[3:]
+    elif n_lower.startswith("los "):
+        return "de los " + n[4:]
+    elif n_lower.startswith("las "):
+        return "de las " + n[4:]
+    elif n_lower.startswith("av "):
+        return "de la Avenida " + n[3:]
+    elif n_lower.startswith("av."):
+        return "de la Avenida " + n[3:].lstrip()
+    elif n_lower.startswith("avenida "):
+        return "de la " + n
+    elif n_lower.startswith("calzada la "):
+        return "de la Calzada La " + n[11:]
+    elif n_lower.startswith("calzada "):
+        return "de la " + n
+    elif n_lower.startswith("calle "):
+        return "de la " + n
+    elif n_lower.startswith("río ") or n_lower.startswith("rio "):
+        return "del " + n
+    elif n_lower.startswith("acueducto"):
+        return "del " + n
+    elif n_lower.startswith("libramiento"):
+        return "del " + n
+    elif n_lower.startswith("bosque ") or n_lower.startswith("parque ") or n_lower.startswith("centro "):
+        return "del " + n
+    else:
+        return "de " + n
+
+
 def compute_bbox(coords: List[List[float]]) -> List[float]:
-    """Calcula un bounding box con margen para visualización cartográfica."""
+    """Calcula un bounding box balanceado con margen y contexto urbano mínimo."""
     if not coords:
         return [-101.26, 19.65, -101.12, 19.74]
     lons = [pt[0] for pt in coords]
     lats = [pt[1] for pt in coords]
     min_lon, max_lon = min(lons), max(lons)
     min_lat, max_lat = min(lats), max(lats)
+    center_lon = (min_lon + max_lon) / 2.0
+    center_lat = (min_lat + max_lat) / 2.0
     dlon = max_lon - min_lon
     dlat = max_lat - min_lat
-    pad_lon = max(dlon * 0.15, 0.005)
-    pad_lat = max(dlat * 0.15, 0.005)
+
+    # Asegurar un margen cómodo y un tamaño mínimo para ver la mancha urbana circundante (~6.5km lon x ~5km lat)
+    MIN_SPAN_LON = 0.062
+    MIN_SPAN_LAT = 0.046
+    span_lon = max(dlon * 1.35, MIN_SPAN_LON)
+    span_lat = max(dlat * 1.35, MIN_SPAN_LAT)
+
     return [
-        round(min_lon - pad_lon, 4),
-        round(min_lat - pad_lat, 4),
-        round(max_lon + pad_lon, 4),
-        round(max_lat + pad_lat, 4),
+        round(center_lon - span_lon / 2.0, 4),
+        round(center_lat - span_lat / 2.0, 4),
+        round(center_lon + span_lon / 2.0, 4),
+        round(center_lat + span_lat / 2.0, 4),
     ]
 
 
@@ -182,8 +225,8 @@ def load_layers_data() -> List[Dict[str, Any]]:
                         color = color or "#0288d1"
                     elif any(w in n_lower for w in ["acueducto", "tarasca", "san diego", "monumento", "arcos"]):
                         category = category or "monumento"
-                        kicker = kicker or "monumento histórico · cantera rosa"
-                        color = color or "#c45b43"
+                        kicker = kicker or "monumento histórico · acueducto"
+                        color = color or "#fbc02d"
                     elif any(w in n_lower for w in ["libramiento", "periferico", "periférico", "circuito", "anillo"]):
                         category = category or "periferico"
                         kicker = kicker or "anillo vial · Paseo de la República"
@@ -191,7 +234,19 @@ def load_layers_data() -> List[Dict[str, Any]]:
                     elif any(w in n_lower for w in ["madero"]):
                         category = category or "eje"
                         kicker = kicker or "eje vial · Centro Histórico"
-                        color = color or "#d97706"
+                        color = color or "#f48fb1"
+                    elif any(w in n_lower for w in ["ventura"]):
+                        category = category or "eje"
+                        kicker = kicker or "eje vial · Centro a Camelinas"
+                        color = color or "#ea580c"
+                    elif any(w in n_lower for w in ["huerta"]):
+                        category = category or "eje"
+                        kicker = kicker or "eje vial · Salida a Pátzcuaro"
+                        color = color or "#2e7d32"
+                    elif any(w in n_lower for w in ["morelos"]):
+                        category = category or "eje"
+                        kicker = kicker or "eje vial · Norte-Sur"
+                        color = color or "#e91e63"
                     elif any(w in n_lower for w in ["calzada", "andador", "peatonal"]):
                         category = category or "andador"
                         kicker = kicker or "andador urbano · Morelia"
@@ -217,11 +272,41 @@ def load_layers_data() -> List[Dict[str, Any]]:
                     else:
                         badge = layer_id[:3].upper()
 
-                # 5. Descripción y consejos
-                desc = str(props.get("description") or props.get("DESCRIPTION") or f"Traza de memoria el recorrido de {name} sobre la mancha urbana de Morelia.")
-                diff_advice = str(props.get("difficultyAdvice") or props.get("DIFFICULTYADVICE") or f"Traza el curso de {name} conectando sus extremos.")
+                # 5. Articulación gramatical y Pista corta (para el badge superior)
+                articulated = articular_nombre(name)
+                hint = str(props.get("hint") or props.get("HINT") or "").strip()
+                if not hint:
+                    if "chiquito" in n_lower:
+                        hint = "A lo largo de Av. Solidaridad"
+                    elif "grande" in n_lower:
+                        hint = "Cruza el norte por Estadio Morelos"
+                    elif "acueducto" in n_lower:
+                        hint = "De Las Tarascas a Mil Cumbres"
+                    elif "libramiento" in n_lower:
+                        hint = "Circuito que rodea la ciudad"
+                    elif "madero" in n_lower:
+                        hint = "Cruza el Centro frente a Catedral"
+                    elif "huerta" in n_lower:
+                        hint = "Conecta con salida a Pátzcuaro"
+                    elif "morelos" in n_lower:
+                        hint = "Eje perpendicular junto a Catedral"
+                    elif "ventura" in n_lower:
+                        hint = "Del Acueducto a Av. Camelinas"
+                    else:
+                        hint = kicker[:32] if kicker else name
 
-                # 6. Bounding Box
+                # 6. Instrucción directa (prompt / letrero de misión) y descripción
+                prompt = str(props.get("prompt") or props.get("PROMPT") or "").strip()
+                if not prompt:
+                    prompt = f"Traza de memoria la ubicación, forma y extensión {articulated}"
+
+                desc = str(props.get("description") or props.get("DESCRIPTION") or "").strip()
+                if not desc:
+                    desc = f"Traza de memoria la ubicación, forma y extensión {articulated} sobre la mancha urbana de Morelia."
+
+                diff_advice = str(props.get("difficultyAdvice") or props.get("DIFFICULTYADVICE") or f"Traza de memoria la ubicación, forma y extensión {articulated} sin referencias.")
+
+                # 7. Bounding Box
                 bbox = feat.get("bbox") or props.get("bbox")
                 if not bbox or not isinstance(bbox, list) or len(bbox) < 4:
                     bbox = compute_bbox(coords)
@@ -229,8 +314,11 @@ def load_layers_data() -> List[Dict[str, Any]]:
                 layer_item = {
                     "id": layer_id,
                     "name": name,
+                    "articulatedName": articulated,
                     "kicker": kicker,
                     "badge": badge,
+                    "hint": hint,
+                    "prompt": prompt,
                     "category": category,
                     "color": color,
                     "textColor": text_color,
@@ -420,7 +508,7 @@ def save_session(req: SessionRequest):
 
     geojson_data = {
         "type": "FeatureCollection",
-        "name": f"Croquis Morelia - {player_name}",
+        "name": f"Mi Croquis Mental de Morelia - {player_name}",
         "crs": {
             "type": "name",
             "properties": {
@@ -507,10 +595,10 @@ def serve_index():
     index_path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
-    return JSONResponse({"status": "Croquis Morelia Backend Active", "docs": "/docs"})
+    return JSONResponse({"status": "Mi Croquis Mental de Morelia Backend Active", "docs": "/docs"})
 
 
 if __name__ == "__main__":
     import uvicorn
-    print("Iniciando servidor de Croquis Morelia en http://localhost:8000 ...")
+    print("Iniciando servidor de Mi Croquis Mental de Morelia en http://localhost:8000 ...")
     uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True)

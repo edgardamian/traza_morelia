@@ -1,4 +1,35 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.venv/
+venv/
+ENV/
+
+# Sesiones de usuario guardadas
+saved_maps/
+
+# Archivos de metadatos locales de QGIS
+*.qmd
+
+# Scripts temporales de procesamiento y scratch
+extract_logos.py
+generate_brand_assets.py
+test_pista.py
+extract_morelia_geo.py
+fetch_osm.py
+generate_morelia_data.py
+verify_api.py
+BITACORA_INVESTIGACION.md
+data/lineas_morelia_*
+data/morelia_layers.geojson
+
+# IDEs y sistemas
 .gemini/
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

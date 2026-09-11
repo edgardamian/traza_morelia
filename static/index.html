@@ -5,10 +5,11 @@
   <meta charset="utf-8" />
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
-  <title>Dibuja tu croquis de Morelia</title>
+  <title>Traza Morelia | IMPLAN</title>
   <meta name="description"
-    content="Dibuja los ríos, el acueducto y los ejes emblemáticos de Morelia de memoria y descubre qué tan cerca estuviste de la realidad." />
-  <meta name="theme-color" id="theme-color-meta" content="#fbf8f4" />
+    content="Plataforma de Percepción Geográfica y Memoria Espacial del Instituto Municipal de Planeación de Morelia (IMPLAN Morelia)." />
+  <link rel="icon" type="image/png" href="/static/img/logo_implan_sin_slogan.png" />
+  <meta name="theme-color" id="theme-color-meta" content="#00833e" />
   <meta name="color-scheme" content="light dark" />
 
   <meta property="og:type" content="website" />
@@ -31,17 +32,44 @@
   </noscript>
 
   <div id="app">
-    <!-- BARRA SUPERIOR -->
+    <!-- BARRA SUPERIOR INSTITUCIONAL IMPLAN -->
     <header id="top-strip">
+      <div id="implan-top-bar">
+        <div class="implan-brand">
+          <img src="/static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="implan-logo-header" />
+          <span class="implan-brand-divider" aria-hidden="true"></span>
+          <img src="/static/img/escudo_morelia_clean.png" alt="Ayuntamiento de Morelia" class="implan-escudo-header" />
+          <span class="implan-brand-divider" aria-hidden="true"></span>
+          <img src="/static/img/sigem_gris.png" alt="SIGEM" class="implan-sigem-header" />
+          <img src="/static/img/geofest_logo.png" alt="GeoFest" class="implan-geofest-header"
+            onerror="this.style.display='none'" />
+
+        </div>
+      </div>
+
       <div id="progress-row">
         <div id="progress-dots" aria-hidden="true"></div>
-        <div id="progress-indicator">0 / 5</div>
+        <div id="progress-indicator">0 / 8</div>
       </div>
 
       <div id="line-header">
-        <div id="line-medallion" class="medallion">RCh</div>
+        <div id="line-medallion" class="medallion">CHI</div>
         <div class="line-label">
-          <div class="kicker" id="line-kicker">hidrografía · río sur</div>
+          <div class="kicker-wrap">
+            <button id="pista-btn" class="pista-btn" type="button" aria-expanded="false"
+              title="Revelar pista geográfica">
+              <svg class="pista-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 18h6"></path>
+                <path d="M10 22h4"></path>
+                <path
+                  d="M12 2a7 7 0 0 0-7 7c0 2.5 1.3 4.7 3.3 6 .4.3.7.8.7 1.3V17a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-.7c0-.5.3-1 .7-1.3 2-1.3 3.3-3.5 3.3-6a7 7 0 0 0-7-7z">
+                </path>
+              </svg>
+              <span id="pista-btn-text">Pista</span>
+            </button>
+            <span class="kicker" id="line-kicker" hidden></span>
+          </div>
           <div class="line-name" id="line-name">Cargando Morelia…</div>
         </div>
         <div class="header-actions">
@@ -78,9 +106,6 @@
         </button>
 
         <div class="utility-row-right">
-          <div class="hint-badge" id="hint-badge" title="Consejo geográfico">
-            <span id="hint-text">Río Chiquito</span>
-          </div>
           <button id="borrar-btn" class="icon-btn" type="button" aria-label="Borrar trazo actual" disabled
             title="Borrar trazo">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -180,7 +205,7 @@
           <path d="M2 2l7.586 7.586"></path>
           <circle cx="11" cy="11" r="2"></circle>
         </svg>
-        <span id="draw-prompt-text">Traza sobre el mapa con el dedo o ratón</span>
+        <span id="draw-prompt-text">Traza de memoria la ubicación, forma y extensión del Río Chiquito</span>
       </div>
     </main>
 
@@ -203,16 +228,25 @@
         <div class="flip-face flip-face-front">
           <div class="share-card" id="share-card">
             <div class="share-card-header">
+              <div class="share-card-brand-logos">
+                <img src="/static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="share-implan-logo" />
+                <span class="share-brand-sep" aria-hidden="true"></span>
+                <img src="/static/img/escudo_morelia_clean.png" alt="Morelia" class="share-escudo-logo" />
+                <span class="share-brand-sep" aria-hidden="true"></span>
+                <img src="/static/img/sigem_gris.png" alt="SIGEM" class="share-sigem-logo" />
+                <img src="/static/img/geofest_logo.png" alt="GeoFest" class="share-geofest-logo"
+                  onerror="this.style.display='none'" />
+              </div>
               <div class="share-card-brand">
-                <span class="brand-title" id="share-card-title">Mi Croquis de Morelia</span>
-                <span class="brand-sub" id="share-card-sub">Memoria colectiva del la ciudad de Morelia</span>
+                <span class="brand-title" id="share-card-title">Traza Morelia</span>
+                <span class="brand-sub" id="share-card-sub">Memoria territorial de la ciudad de Morelia</span>
               </div>
               <div id="share-hard-seal" class="hard-mode-seal" hidden>
                 <span>DIFÍCIL</span>
               </div>
             </div>
 
-            <!-- MEDALLAS DE LAS 6 CAPAS CON PORCENTAJES -->
+            <!-- MEDALLAS DE LAS 8 CAPAS CON PORCENTAJES -->
             <div id="share-card-medallions" class="share-card-medallions"></div>
 
             <!-- MAPA COMPUESTO DIBUJADO -->
@@ -227,10 +261,52 @@
               </div>
               <div class="share-verdict" id="share-verdict">Moreliano de Cepa</div>
               <p class="share-phrase" id="share-phrase">"Te sabes las calles mejor que chofer de Ruta Gris"</p>
+
+              <div class="share-card-social-callout">
+                <p class="share-social-text">Tómale una foto o video a tu marcador, etiquétanos en tus redes sociales y
+                  compartimos tu post, el post con mas likes se llevara una sopresa a fin de mes.</p>
+                <div class="share-social-tags">
+                  <span class="social-tag">
+                    <svg class="social-icon social-icon-fb" viewBox="0 0 24 24" width="18" height="18"
+                      aria-hidden="true">
+                      <path fill="#1877F2"
+                        d="M24 12c0-6.627-5.373-12-12-12S0 5.373 0 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 22.954 24 17.99 24 12z" />
+                      <path fill="#ffffff"
+                        d="M16.671 15.469l.532-3.47h-3.328v-2.25c0-.949.465-1.874 1.956-1.874h1.533V4.922s-1.374-.235-2.686-.235c-2.741 0-4.533 1.662-4.533 4.669v2.569H7.078v3.47h3.047v8.385a12.09 12.09 0 003.822 0v-8.385h2.724z" />
+                    </svg>
+                    IMPLANmorelia
+                  </span>
+                  <span class="social-sep" aria-hidden="true">·</span>
+                  <span class="social-tag">
+                    <svg class="social-icon social-icon-ig" viewBox="0 0 24 24" width="18" height="18"
+                      aria-hidden="true">
+                      <defs>
+                        <radialGradient id="ig-grad" cx="30%" cy="107%" r="150%">
+                          <stop offset="0%" stop-color="#fdf497" />
+                          <stop offset="5%" stop-color="#fdf497" />
+                          <stop offset="45%" stop-color="#fd5949" />
+                          <stop offset="60%" stop-color="#d6249f" />
+                          <stop offset="90%" stop-color="#285AEB" />
+                        </radialGradient>
+                      </defs>
+                      <rect width="24" height="24" rx="6" fill="url(#ig-grad)" />
+                      <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" fill="none" stroke="#ffffff"
+                        stroke-width="1.8" />
+                      <circle cx="12" cy="12" r="4.2" fill="none" stroke="#ffffff" stroke-width="1.8" />
+                      <circle cx="16.8" cy="7.2" r="1.1" fill="#ffffff" />
+                    </svg>
+                    implan_morelia
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div class="share-card-footer">
-              <span id="share-card-footer-text">Croquis Morelia · Plataforma de Percepción Geográfica</span>
+              <div class="share-mobility-banner-wrap">
+                <img src="/static/img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="share-mobility-banner" />
+              </div>
+              <span id="share-card-footer-text">IMPLAN Morelia · Instituto Municipal de Planeación ·
+                www.implanmorelia.org</span>
             </div>
           </div>
 
@@ -245,7 +321,7 @@
                 <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
               </svg>
-              <span>Compartir mi Croquis</span>
+              <span>Compartir mi croquis mental</span>
             </button>
             <button id="descargar-btn" class="pill-btn secondary" type="button">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -283,28 +359,41 @@
   <div id="about-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="about-title">
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content welcome-modal-content">
+      <div class="welcome-modal-banner">
+        <div class="welcome-logos-row">
+          <img src="/static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="welcome-implan-logo" />
+          <span class="welcome-logo-sep" aria-hidden="true"></span>
+          <img src="/static/img/escudo_morelia_clean.png" alt="H. Ayuntamiento de Morelia"
+            class="welcome-escudo-logo" />
+          <span class="welcome-logo-sep" aria-hidden="true"></span>
+          <img src="/static/img/sigem_gris.png" alt="SIGEM Morelia" class="welcome-sigem-logo" />
+          <span class="welcome-logo-sep geofest-sep" aria-hidden="true"></span>
+          <img src="/static/img/geofest_logo.png" alt="GeoFest" class="welcome-geofest-logo"
+            onerror="this.style.display='none'; document.querySelectorAll('.geofest-sep').forEach(el => el.style.display='none');" />
+        </div>
+      </div>
       <div class="modal-header">
         <div class="welcome-header-titles">
-          <span class="welcome-kicker">Plataforma de Percepción Geográfica</span>
-          <h3 id="about-title">Croquis Morelia</h3>
+          <span class="welcome-kicker">Instituto Municipal de Planeación de Morelia</span>
+          <h3 id="about-title">Traza Morelia</h3>
         </div>
         <button class="modal-close-btn about-close-btn" type="button" aria-label="Cerrar modal">&times;</button>
       </div>
       <div class="modal-body">
-        <p><strong>Croquis Morelia</strong> es un experimento interactivo de <em>percepción espacial y memoria
-            colectiva</em> adaptado para Morelia, Michoacán.</p>
-        <p>Dibuja sobre el mapa en blanco los <strong>dos ríos emblemáticos</strong> (Río Grande y Río Chiquito) y los
-          <strong>ejes y vialidades clave</strong> (Libramiento, Av. Madero, Av. Morelos, etc.).
+        <p>Plataforma de percepción territorial y memoria espacial colectiva desarrollada por el <strong>IMPLAN
+            Morelia</strong> para estudiar la memoria espacial que tiene la ciudadanía sobre la <strong>ciudad de
+            Morelia</strong>.
         </p>
-        <p>Cada trazo evalúa matemáticamente en coordenadas geográficas tus trazos de las calles y rios de la ciudad
-          para calcular la fidelidad espacial entre lo que dibujaste y la cartografía real de la ciudad.</p>
+        <p><strong>Instrucciones: </strong>Traza de memoria sobre el mapa por donde pasa el acueducto, los ejes viales
+          principales y
+          los ríos emblemáticos de la ciudad de Morelia. El sistema evaluará tus trazos contra la cartografía oficial
+          del municipio.</p>
 
         <div class="about-tips">
-          <h4>Modalidades:</h4>
-          <ul>
-            <li>En <strong>Modo Normal</strong> tienes puntos de referencia (Catedral, Estadio, Zoológico, etc.).</li>
-            <li>En <strong>Modo Difícil</strong> las referencias desaparecen: ¡a pura memoria de moreliano!</li>
-          </ul>
+          <div class="tips-row">
+            <span><strong>Modo Normal:</strong> con puntos de referencia</span>
+            <span><strong>Modo Difícil:</strong> a pura memoria de moreliano</span>
+          </div>
         </div>
 
         <!-- CAMPO PARA EL NOMBRE DEL PARTICIPANTE -->
@@ -319,8 +408,12 @@
           </label>
           <input type="text" id="player-name-input" class="welcome-name-input"
             placeholder="Ingresa tu nombre o apodo (ej. Rodrigo)" maxlength="35" autocomplete="name" />
-          <span class="welcome-name-hint">Se incluirá como autor en tu croquis y en la imagen de descarga
-            oficial.</span>
+          <span class="welcome-name-hint">Se incluirá como autor en tu croquis mental a la hora de la descarga.</span>
+        </div>
+
+        <div class="about-contact-box">
+          <span><strong>IMPLAN Morelia:</strong> Blvd. García de León 20-4, Col del Empleado · Tel. (443) 314 05 38 · <a
+              href="https://www.implanmorelia.org" target="_blank" rel="noopener">www.implanmorelia.org</a></span>
         </div>
       </div>
       <div class="modal-footer">
@@ -332,6 +425,9 @@
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
         </button>
+      </div>
+      <div class="modal-bottom-mobility">
+        <img src="/static/img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="modal-mobility-banner" />
       </div>
     </div>
   </div>

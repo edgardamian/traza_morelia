@@ -107,8 +107,34 @@
   const mapWrap = document.getElementById("map-wrap");
   const lineMedallion = document.getElementById("line-medallion");
   const lineKicker = document.getElementById("line-kicker");
+  const pistaBtn = document.getElementById("pista-btn");
+  const pistaBtnText = document.getElementById("pista-btn-text");
   const lineNameEl = document.getElementById("line-name");
-  const hintTextEl = document.getElementById("hint-text");
+
+  function setPistaVisible(visible) {
+    if (!lineKicker) return;
+    if (visible) {
+      lineKicker.removeAttribute("hidden");
+      pistaBtn?.classList.add("active");
+      pistaBtn?.setAttribute("aria-expanded", "true");
+      if (pistaBtnText) pistaBtnText.textContent = "Ocultar pista";
+      if (pistaBtn) pistaBtn.title = "Ocultar pista geográfica";
+    } else {
+      lineKicker.setAttribute("hidden", "");
+      pistaBtn?.classList.remove("active");
+      pistaBtn?.setAttribute("aria-expanded", "false");
+      if (pistaBtnText) pistaBtnText.textContent = "Pista";
+      if (pistaBtn) pistaBtn.title = "Revelar pista geográfica";
+    }
+  }
+
+  function togglePista() {
+    if (isHardMode()) return;
+    const isHidden = lineKicker ? lineKicker.hasAttribute("hidden") : true;
+    setPistaVisible(isHidden);
+  }
+
+  pistaBtn?.addEventListener("click", togglePista);
   const anchorsToggle = document.getElementById("anchors-toggle");
   const themeColorMeta = document.getElementById("theme-color-meta");
   const progressEl = document.getElementById("progress-indicator");
@@ -118,6 +144,7 @@
   const verMapaBtn = document.getElementById("ver-mapa-btn");
   const aboutBtn = document.getElementById("about-btn");
   const drawPrompt = document.getElementById("draw-prompt");
+  const drawPromptText = document.getElementById("draw-prompt-text");
 
   // Controles de Zoom
   const zoomControls = document.getElementById("zoom-controls");
@@ -311,11 +338,25 @@
   function updateDifficultyUI() {
     const hard = isHardMode();
     document.body.dataset.difficulty = hard ? "hard" : "normal";
-    themeColorMeta?.setAttribute("content", hard ? "#f4eee3" : "#fbf8f4");
+    themeColorMeta?.setAttribute("content", hard ? "#f2f5ef" : "#00833e");
     anchorsToggle.setAttribute("aria-pressed", String(hard));
     anchorsToggle.classList.toggle("active", hard);
     revealHardLabel.hidden = !hard;
     shareHardSeal.hidden = !hard;
+
+    if (pistaBtn) {
+      pistaBtn.disabled = hard;
+      if (hard) {
+        setPistaVisible(false);
+        if (pistaBtnText) pistaBtnText.textContent = "Sin pistas";
+        pistaBtn.title = "Pistas desactivadas en Modo Difícil";
+      } else {
+        if (pistaBtnText && (!lineKicker || lineKicker.hasAttribute("hidden"))) {
+          pistaBtnText.textContent = "Pista";
+        }
+        pistaBtn.title = "Revelar pista geográfica";
+      }
+    }
   }
 
   function renderProgressDots() {
@@ -326,7 +367,7 @@
       dot.className = "progress-dot" + (i < done ? " filled" : "");
       progressDotsEl.appendChild(dot);
     }
-    progressEl.textContent = `${done} / ${canonicalOrder.length}`;
+    progressEl.textContent = `${done} / ${state.order.length || canonicalOrder.length}`;
   }
 
   function renderUserDraw() {
@@ -347,7 +388,7 @@
       .attr("stroke", color)
       .attr("d", d)
       .node();
-    
+
     if (node) {
       const total = node.getTotalLength();
       node.style.strokeDasharray = `${total} ${total}`;
@@ -401,6 +442,9 @@
     isDrawing = true;
     currentStrokePoints = [];
     lastCapturePx = null;
+    if (drawPrompt) {
+      drawPrompt.classList.add("hidden");
+    }
     capturePoint(ev);
   }
 
@@ -435,13 +479,13 @@
     borrarBtn.classList.toggle("active", hasStroke);
   }
 
-  let promptFadeTimer = null;
-  function showDrawPromptBriefly() {
-    if (promptFadeTimer) clearTimeout(promptFadeTimer);
-    drawPrompt.classList.remove("hidden");
-    promptFadeTimer = setTimeout(() => {
-      drawPrompt.classList.add("hidden");
-    }, 4000);
+  function showDrawPrompt(customText = null) {
+    if (customText && drawPromptText) {
+      drawPromptText.textContent = customText;
+    }
+    if (drawPrompt) {
+      drawPrompt.classList.remove("hidden");
+    }
   }
 
   function borrar() {
@@ -451,7 +495,9 @@
     clearLayer(gUserdraw);
     updateListoState();
     updateBorrarState();
-    showDrawPromptBriefly();
+    const meta = currentLineMeta();
+    const activePrompt = meta ? (meta.prompt || `Traza de memoria la ubicación, forma y extensión ${meta.articulatedName || ('del ' + meta.name)}`) : "Traza sobre el mapa con el dedo o ratón";
+    showDrawPrompt(activePrompt);
   }
   borrarBtn.addEventListener("click", borrar);
 
@@ -558,8 +604,14 @@
     lineMedallion.textContent = meta.badge || meta.id.slice(0, 3).toUpperCase();
     lineMedallion.style.setProperty("--line-color", meta.color);
     lineKicker.textContent = meta.kicker || "Trazo de memoria";
+    setPistaVisible(false);
+    if (pistaBtn) {
+      pistaBtn.style.display = meta.kicker ? "" : "none";
+    }
     lineNameEl.textContent = meta.name;
-    hintTextEl.textContent = meta.description || meta.name;
+
+    const activePrompt = meta.prompt || `Traza de memoria la ubicación, forma y extensión ${meta.articulatedName || ('del ' + meta.name)}`;
+    showDrawPrompt(activePrompt);
 
     updateDifficultyUI();
     anchorsToggle.disabled = false;
@@ -803,12 +855,22 @@
       body: JSON.stringify({
         clientId: getClientId(),
         lines: state.drawnLines,
-        metadata: { 
+        metadata: {
           difficulty: state.difficulty,
           playerName: state.playerName || ""
         }
       })
     }).catch((e) => console.error("Error guardando sesión:", e));
+  }
+
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[m]));
   }
 
   function showFinalSheet() {
@@ -821,17 +883,22 @@
     requestAnimationFrame(() => {
       const pName = (state.playerName || "").trim();
       if (shareCardTitle) {
-        shareCardTitle.textContent = pName ? `Croquis de ${pName}` : "Mi Croquis de Morelia";
+        if (pName) {
+          const cleanName = pName.replace(/^croquis\s+(mental\s+)?de\s+/i, "").trim();
+          shareCardTitle.innerHTML = `<span class="brand-kicker-title">Croquis Mental de</span><span class="brand-player-highlight">${escapeHtml(cleanName)}</span>`;
+        } else {
+          shareCardTitle.textContent = "Traza Morelia";
+        }
       }
       if (shareCardSub) {
         shareCardSub.textContent = pName
-          ? `Trazado de memoria por ${pName} · Valle de Guayangareo`
-          : "Memoria colectiva del Valle de Guayangareo";
+          ? `Trazado de memoria por ${pName} · Ciudad de Morelia`
+          : "Memoria territorial de la ciudad de Morelia";
       }
       if (shareCardFooterText) {
         shareCardFooterText.textContent = pName
-          ? `Participante: ${pName} · Croquis Morelia`
-          : "Croquis Morelia · Plataforma de Percepción Geográfica";
+          ? `Participante: ${pName} · Traza Morelia`
+          : "Traza Morelia · IMPLAN Morelia";
       }
 
       renderFinalMap();
@@ -861,10 +928,83 @@
     restartGame();
   });
 
-  // Exportar Ficha HD en Canvas (1080x1350)
-  const SHARE_W = 1080;
-  const SHARE_H = 1350;
+  // Exportar Ficha HD en Canvas (Tamaño Carta 8.5 x 11 in @ 150 DPI: 1275 x 1650 px)
+  const SHARE_W = 1275;
+  const SHARE_H = 1650;
   const FONT_FAMILY = 'Outfit, Inter, -apple-system, sans-serif';
+
+  // Imágenes de Identidad Oficial IMPLAN Morelia para el Canvas
+  const brandImplanLogo = new Image();
+  brandImplanLogo.src = "/static/img/logo_implan_sin_slogan.png";
+
+  const brandEscudoLogo = new Image();
+  brandEscudoLogo.src = "/static/img/escudo_morelia_clean.png";
+
+  const brandSigemLogo = new Image();
+  brandSigemLogo.src = "/static/img/sigem_gris.png";
+
+  const brandGeofestLogo = new Image();
+  brandGeofestLogo.src = "/static/img/geofest_logo.png";
+
+  const brandCenefaImg = new Image();
+  brandCenefaImg.src = "/static/img/cenefa_movilidad.png";
+
+  function drawCanvasFbIcon(ctx, x, y, size) {
+    ctx.save();
+    // Círculo azul oficial #1877F2
+    ctx.fillStyle = "#1877F2";
+    ctx.beginPath();
+    ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 'f' oficial blanca
+    ctx.save();
+    ctx.translate(x, y);
+    const s = size / 24;
+    ctx.scale(s, s);
+    ctx.fillStyle = "#ffffff";
+    const fPath = new Path2D("M16.671 15.469l.532-3.47h-3.328v-2.25c0-.949.465-1.874 1.956-1.874h1.533V4.922s-1.374-.235-2.686-.235c-2.741 0-4.533 1.662-4.533 4.669v2.569H7.078v3.47h3.047v8.385a12.09 12.09 0 003.822 0v-8.385h2.724z");
+    ctx.fill(fPath);
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function drawCanvasIgIcon(ctx, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    const s = size / 24;
+    ctx.scale(s, s);
+
+    // Fondo degradado oficial de Instagram
+    const grad = ctx.createLinearGradient(0, 24, 24, 0);
+    grad.addColorStop(0, "#fdf497");
+    grad.addColorStop(0.15, "#fd5949");
+    grad.addColorStop(0.65, "#d6249f");
+    grad.addColorStop(1, "#285AEB");
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 24, 24, 6);
+    ctx.fill();
+
+    // Silueta de la cámara en blanco
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.roundRect(3.5, 3.5, 17, 17, 4.5);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(12, 12, 4.2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(16.8, 7.2, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
 
   function drawShareCardCanvas(canvas) {
     canvas.width = SHARE_W;
@@ -873,72 +1013,186 @@
     const hard = isHardMode();
 
     // Fondo
-    ctx.fillStyle = hard ? "#f4eee3" : "#fbf8f4";
+    ctx.fillStyle = hard ? "#f2f5ef" : "#f6f8f5";
     ctx.fillRect(0, 0, SHARE_W, SHARE_H);
 
-    // Marco
-    ctx.strokeStyle = "rgba(70, 50, 40, 0.25)";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(32, 32, SHARE_W - 64, SHARE_H - 64);
+    // Marco exterior institucional
+    ctx.strokeStyle = "rgba(75, 79, 84, 0.22)";
+    ctx.lineWidth = 3.5;
+    ctx.strokeRect(36, 36, SHARE_W - 72, SHARE_H - 72);
 
-    // Título y Subtítulo
-    const pName = (state && state.playerName ? state.playerName : "").trim();
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#211915";
-    ctx.font = `800 ${pName ? '48px' : '52px'} ${FONT_FAMILY}`;
-    const mainTitle = pName ? `Croquis de ${pName}` : "Mi Croquis de Morelia";
-    ctx.fillText(mainTitle, SHARE_W / 2, 115);
+    // Barra superior decorativa verde IMPLAN
+    ctx.fillStyle = "#00833e";
+    ctx.fillRect(36, 36, SHARE_W - 72, 8);
 
-    ctx.font = `500 24px ${FONT_FAMILY}`;
-    ctx.fillStyle = "rgba(33, 25, 21, 0.65)";
-    const subTitle = pName 
-      ? `Trazado de memoria en Morelia · Valle de Guayangareo`
-      : "Memoria espacial del Valle de Guayangareo";
-    ctx.fillText(subTitle, SHARE_W / 2, 155);
-
-    // Sello modo difícil
-    if (hard) {
-      ctx.save();
-      ctx.translate(940, 95);
-      ctx.rotate(6 * Math.PI / 180);
-      ctx.fillStyle = "#e63946";
-      ctx.beginPath();
-      ctx.roundRect(-75, -24, 150, 48, 8);
-      ctx.fill();
-      ctx.fillStyle = "#ffffff";
-      ctx.font = `800 22px ${FONT_FAMILY}`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("DIFÍCIL", 0, 1);
-      ctx.restore();
+    // Logos institucionales IMPLAN y Morelia en la cabecera del Canvas
+    let leftLogoRight = 60;
+    if (brandImplanLogo.complete && brandImplanLogo.naturalWidth) {
+      const iw = 155;
+      const ih = (brandImplanLogo.naturalHeight / brandImplanLogo.naturalWidth) * iw;
+      ctx.drawImage(brandImplanLogo, 60, 68, iw, ih);
+      leftLogoRight = 60 + iw;
+    } else {
+      leftLogoRight = 60 + 155;
     }
 
-    // Medallones de Capas
-    const medY = 210, medR = 26, gap = 16;
-    const totalRowW = canonicalOrder.length * (medR * 2) + (canonicalOrder.length - 1) * gap;
-    let startX = SHARE_W / 2 - totalRowW / 2 + medR;
+    let rightLogoLeft = SHARE_W - 60;
+    if (brandEscudoLogo.complete && brandEscudoLogo.naturalWidth) {
+      const eh = 60;
+      const ew = (brandEscudoLogo.naturalWidth / brandEscudoLogo.naturalHeight) * eh;
+      const ex = SHARE_W - 60 - ew;
+      ctx.drawImage(brandEscudoLogo, ex, 66, ew, eh);
+      rightLogoLeft = ex;
+    } else {
+      rightLogoLeft = SHARE_W - 60 - 180;
+    }
 
-    for (const lid of canonicalOrder) {
-      const meta = layersMeta[lid];
+    // Margen seguro estricto: evita matemáticamente cualquier traslape con los logotipos
+    const SAFE_GAP = 35;
+    const maxSafeWidth = 2 * Math.min(
+      (SHARE_W / 2) - (leftLogoRight + SAFE_GAP),
+      (rightLogoLeft - SAFE_GAP) - (SHARE_W / 2)
+    );
+
+    // Título y Subtítulo con salto de línea inteligente y auto-escala
+    const pName = (state && state.playerName ? state.playerName : "").trim();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+
+    if (pName) {
+      // SALTO DE LÍNEA AUTOMÁTICO:
+      // Línea 1: "Croquis Mental de"
+      // Línea 2: Nombre del participante en grande y resaltado
+      const line1Text = "Croquis Mental de";
+      let line2Text = pName.replace(/^croquis\s+(mental\s+)?de\s+/i, "").trim();
+
+      // Ajuste dinámico de fuente para la Línea 2 (Nombre)
+      let nameFontSize = 46;
+      ctx.font = `800 ${nameFontSize}px ${FONT_FAMILY}`;
+      while (ctx.measureText(line2Text).width > maxSafeWidth && nameFontSize > 22) {
+        nameFontSize -= 2;
+        ctx.font = `800 ${nameFontSize}px ${FONT_FAMILY}`;
+      }
+
+      // Si aún en 22px fuera extremadamente largo, partir el nombre en 2 líneas
+      let nameLines = [line2Text];
+      if (ctx.measureText(line2Text).width > maxSafeWidth) {
+        const words = line2Text.split(/\s+/);
+        const mid = Math.ceil(words.length / 2);
+        nameLines = [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
+      }
+
+      // Línea 1: Prefijo
+      ctx.font = `700 32px ${FONT_FAMILY}`;
+      ctx.fillStyle = "#4a5056";
+      ctx.fillText(line1Text, SHARE_W / 2, 92);
+
+      // Línea 2: Nombre del participante (resaltado verde IMPLAN)
+      ctx.fillStyle = "#00833e";
+      if (nameLines.length === 1) {
+        ctx.font = `800 ${nameFontSize}px ${FONT_FAMILY}`;
+        ctx.fillText(nameLines[0], SHARE_W / 2, 136);
+      } else {
+        ctx.font = `800 ${Math.min(nameFontSize, 30)}px ${FONT_FAMILY}`;
+        ctx.fillText(nameLines[0], SHARE_W / 2, 126);
+        ctx.fillText(nameLines[1], SHARE_W / 2, 154);
+      }
+
+      // Subtítulo institucional
+      ctx.font = `600 21px ${FONT_FAMILY}`;
+      ctx.fillStyle = "#6d737a";
+      const subTitle = "IMPLAN Morelia · Plataforma de Percepción Geográfica";
+      const subY = nameLines.length === 1 ? 174 : 188;
+      ctx.fillText(subTitle, SHARE_W / 2, subY);
+
+    } else {
+      // Sin participante (Anónimo): 1 sola línea centrada
+      const mainTitle = "Traza Morelia";
+      let titleFontSize = 52;
+      ctx.font = `800 ${titleFontSize}px ${FONT_FAMILY}`;
+      while (ctx.measureText(mainTitle).width > maxSafeWidth && titleFontSize > 28) {
+        titleFontSize -= 2;
+        ctx.font = `800 ${titleFontSize}px ${FONT_FAMILY}`;
+      }
+
+      ctx.fillStyle = "#00833e";
+      ctx.fillText(mainTitle, SHARE_W / 2, 110);
+
+      ctx.font = `600 24px ${FONT_FAMILY}`;
+      ctx.fillStyle = "#4a5056";
+      const subTitle = "IMPLAN Morelia · Plataforma de Percepción Geográfica";
+      ctx.fillText(subTitle, SHARE_W / 2, 155);
+    }
+
+    // Contenedor y Leyenda de Capas (Insignia + Nombre completo en cuadrícula armónica)
+    const mapLeft = 60, mapTop = 356, mapW = SHARE_W - 120, mapH = 820;
+    const legendBoxTop = 216;
+    const legendBoxH = 114;
+
+    ctx.fillStyle = hard ? "rgba(70, 50, 40, 0.045)" : "rgba(70, 50, 40, 0.035)";
+    ctx.strokeStyle = "rgba(70, 50, 40, 0.12)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(mapLeft, legendBoxTop, mapW, legendBoxH, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    const totalItems = canonicalOrder.length;
+    const numCols = totalItems > 4 ? 4 : (totalItems || 1);
+    const colW = mapW / numCols;
+    const rowH = 48;
+    const legendBaseY = 244;
+    const badgeR = 18;
+
+    for (let idx = 0; idx < totalItems; idx++) {
+      const lid = canonicalOrder[idx];
+      const meta = layersMeta[lid] || {};
       const drawn = lid in state.perLineScores;
-      const score = drawn ? state.perLineScores[lid] : 0;
+      const col = idx % numCols;
+      const row = Math.floor(idx / numCols);
+
+      const cellX = mapLeft + col * colW + 14;
+      const cellY = legendBaseY + row * rowH;
+
+      // Medallón circular
+      const cx = cellX + badgeR;
+      const cy = cellY;
 
       ctx.beginPath();
-      ctx.arc(startX, medY, medR, 0, Math.PI * 2);
-      ctx.fillStyle = drawn ? meta.color : "#d4c8be";
+      ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
+      ctx.fillStyle = drawn ? (meta.color || "#c45b43") : "#d4c8be";
       ctx.fill();
 
+      // Siglas en medallón
       ctx.fillStyle = "#ffffff";
-      ctx.font = `800 18px ${FONT_FAMILY}`;
+      ctx.font = `800 15px ${FONT_FAMILY}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(meta.badge || lid.slice(0, 3).toUpperCase(), startX, medY);
+      const badgeText = (meta.badge || lid.slice(0, 3)).toUpperCase();
+      ctx.fillText(badgeText, cx, cy + 0.5);
 
-      startX += medR * 2 + gap;
+      // Nombre de la capa
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.font = `600 19px ${FONT_FAMILY}`;
+      ctx.fillStyle = drawn ? "rgba(33, 25, 21, 0.88)" : "rgba(33, 25, 21, 0.42)";
+
+      const tx = cx + badgeR + 10;
+      const maxTextW = colW - (badgeR * 2 + 20);
+      let displayName = meta.name || lid;
+
+      // Truncado preventivo seguro si algún nombre fuera excepcionalmente largo
+      if (ctx.measureText(displayName).width > maxTextW) {
+        while (displayName.length > 3 && ctx.measureText(displayName + "…").width > maxTextW) {
+          displayName = displayName.slice(0, -1);
+        }
+        displayName += "…";
+      }
+
+      ctx.fillText(displayName, tx, cy);
     }
 
     // Mapa Canvas
-    const mapLeft = 50, mapTop = 260, mapW = SHARE_W - 100, mapH = 720;
     ctx.fillStyle = hard ? "#fffdf8" : "#ffffff";
     ctx.fillRect(mapLeft, mapTop, mapW, mapH);
     ctx.strokeStyle = "rgba(70, 50, 40, 0.15)";
@@ -955,7 +1209,7 @@
         geometry: { type: "MultiPoint", coordinates: [[bbox[0], bbox[1]], [bbox[2], bbox[3]]] }
       };
       const proj = d3.geoMercator().fitExtent(
-        [[mapLeft + 40, mapTop + 40], [mapLeft + mapW - 40, mapTop + mapH - 40]],
+        [[mapLeft + 45, mapTop + 45], [mapLeft + mapW - 45, mapTop + mapH - 45]],
         feature
       );
 
@@ -982,38 +1236,173 @@
         ctx.beginPath();
         lineGen(state.drawnLines[lid]);
         ctx.strokeStyle = layersMeta[lid]?.color || "#c45b43";
-        ctx.lineWidth = 7;
+        ctx.lineWidth = 8;
         ctx.stroke();
       }
+      ctx.restore();
+    }
+
+    // Sello oficial de Modo Difícil estampado sobre el lienzo cartográfico
+    if (hard) {
+      ctx.save();
+      ctx.translate(mapLeft + mapW - 95, mapTop + 36);
+      ctx.rotate(4 * Math.PI / 180);
+      ctx.fillStyle = "#e63946";
+      ctx.beginPath();
+      ctx.roundRect(-70, -20, 140, 40, 8);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `800 20px ${FONT_FAMILY}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("DIFÍCIL", 0, 1);
       ctx.restore();
     }
 
     // Puntaje y Veredicto
     const globalScore = computeGlobalScore();
     ctx.textAlign = "center";
-    ctx.fillStyle = "#211915";
-    ctx.font = `800 110px ${FONT_FAMILY}`;
-    ctx.fillText(`${globalScore}`, SHARE_W / 2 - 30, 1090);
+    ctx.fillStyle = "#34383c";
+    ctx.font = `800 128px ${FONT_FAMILY}`;
+    ctx.fillText(`${globalScore}`, SHARE_W / 2 - 45, 1276);
 
-    ctx.font = `600 42px ${FONT_FAMILY}`;
-    ctx.fillStyle = "rgba(33, 25, 21, 0.45)";
-    ctx.fillText("/100", SHARE_W / 2 + 75, 1090);
+    ctx.font = `600 48px ${FONT_FAMILY}`;
+    ctx.fillStyle = "rgba(75, 79, 84, 0.45)";
+    ctx.fillText("/100", SHARE_W / 2 + 90, 1276);
 
-    ctx.font = `800 36px ${FONT_FAMILY}`;
-    ctx.fillStyle = "#9b3c25";
-    ctx.fillText(shareVerdictEl.textContent, SHARE_W / 2, 1150);
+    ctx.font = `800 42px ${FONT_FAMILY}`;
+    ctx.fillStyle = "#00833e";
+    ctx.fillText(shareVerdictEl.textContent, SHARE_W / 2, 1338);
 
     ctx.font = `italic 500 24px ${FONT_FAMILY}`;
-    ctx.fillStyle = "rgba(33, 25, 21, 0.7)";
-    ctx.fillText(sharePhraseEl.textContent, SHARE_W / 2, 1200);
+    ctx.fillStyle = "rgba(75, 79, 84, 0.78)";
+    ctx.fillText(sharePhraseEl.textContent, SHARE_W / 2, 1380);
 
-    // Pie de foto
-    ctx.font = `500 20px ${FONT_FAMILY}`;
-    ctx.fillStyle = "rgba(33, 25, 21, 0.45)";
+    // Llamado a redes sociales (dinámico desde el DOM para reflejar de inmediato cualquier cambio en HTML)
+    const shareSocialTextEl = document.querySelector(".share-social-text");
+    const rawSocialText = shareSocialTextEl
+      ? shareSocialTextEl.textContent.replace(/\s+/g, " ").trim()
+      : "Tómale una foto a tu marcador, etiquétanos en tus redes sociales y compartimos tu foto, la foto con más likes se llevará una sorpresa a fin de mes.";
+
+    const maxSocialWidth = SHARE_W - 140;
+    ctx.textAlign = "center";
+    let calloutFontSize = 21;
+
+    function getCanvasWrappedLines(text, fontPx) {
+      ctx.font = `600 ${fontPx}px ${FONT_FAMILY}`;
+      const words = text.split(/\s+/);
+      const lines = [];
+      let curLine = words[0] || "";
+      for (let i = 1; i < words.length; i++) {
+        const test = curLine + " " + words[i];
+        if (ctx.measureText(test).width <= maxSocialWidth) {
+          curLine = test;
+        } else {
+          lines.push(curLine);
+          curLine = words[i];
+        }
+      }
+      if (curLine) lines.push(curLine);
+      return lines;
+    }
+
+    let socialLines = getCanvasWrappedLines(rawSocialText, calloutFontSize);
+    while (socialLines.length > 2 && calloutFontSize > 15) {
+      calloutFontSize -= 1;
+      socialLines = getCanvasWrappedLines(rawSocialText, calloutFontSize);
+    }
+
+    ctx.font = `600 ${calloutFontSize}px ${FONT_FAMILY}`;
+    ctx.fillStyle = "#34383c";
+
+    let socialPillY = 1444;
+    let cenefaY = 1506;
+    let cenefaH = 26;
+
+    if (socialLines.length <= 1) {
+      ctx.fillText(socialLines[0] || rawSocialText, SHARE_W / 2, 1424);
+      socialPillY = 1444;
+      cenefaY = 1506;
+    } else {
+      ctx.fillText(socialLines[0], SHARE_W / 2, 1412);
+      ctx.fillText(socialLines[1], SHARE_W / 2, 1438);
+      socialPillY = 1456;
+      cenefaY = 1512;
+      cenefaH = 24;
+    }
+
+    // Identificadores de Redes Sociales (dinámicos desde el DOM o valores predeterminados)
+    const socialTagEls = document.querySelectorAll(".share-social-tags .social-tag");
+    let fbUser = "IMPLANmorelia";
+    let igUser = "implan_morelia";
+    if (socialTagEls.length >= 2) {
+      const t0 = socialTagEls[0].textContent.trim();
+      const t1 = socialTagEls[1].textContent.trim();
+      if (t0) fbUser = t0;
+      if (t1) igUser = t1;
+    }
+
+    const iconSize = 28;
+    const gapIconText = 10;
+    const sepGap = 22;
+
+    ctx.font = `700 23px ${FONT_FAMILY}`;
+    const fbW = ctx.measureText(fbUser).width;
+    const igW = ctx.measureText(igUser).width;
+    const sepW = ctx.measureText("·").width;
+
+    const totalContentW = iconSize + gapIconText + fbW + sepGap + sepW + sepGap + iconSize + gapIconText + igW;
+    const pillPadX = 30, pillH = socialLines.length > 1 ? 40 : 44;
+    const pillW = totalContentW + pillPadX * 2;
+    const pillX = (SHARE_W - pillW) / 2;
+    const pillY = socialPillY;
+
+    ctx.fillStyle = "rgba(0, 131, 62, 0.07)";
+    ctx.strokeStyle = "rgba(0, 131, 62, 0.30)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+    ctx.fill();
+    ctx.stroke();
+
+    let curX = pillX + pillPadX;
+    const iconY = pillY + (pillH - iconSize) / 2;
+    const textBaselineY = pillY + (socialLines.length > 1 ? 28 : 30);
+
+    // Logo e Identificador de Facebook
+    drawCanvasFbIcon(ctx, curX, iconY, iconSize);
+    curX += iconSize + gapIconText;
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#34383c";
+    ctx.fillText(fbUser, curX, textBaselineY);
+    curX += fbW + sepGap;
+
+    // Separador
+    ctx.fillStyle = "rgba(75, 79, 84, 0.45)";
+    ctx.fillText("·", curX, textBaselineY);
+    curX += sepW + sepGap;
+
+    // Logo e Identificador de Instagram
+    drawCanvasIgIcon(ctx, curX, iconY, iconSize);
+    curX += iconSize + gapIconText;
+
+    ctx.fillStyle = "#34383c";
+    ctx.fillText(igUser, curX, textBaselineY);
+    ctx.textAlign = "center";
+
+    // Cenefa institucional de movilidad sustentable
+    if (brandCenefaImg.complete && brandCenefaImg.naturalWidth) {
+      ctx.drawImage(brandCenefaImg, 50, cenefaY, SHARE_W - 100, cenefaH);
+    }
+
+    // Pie de página institucional
+    ctx.font = `600 21px ${FONT_FAMILY}`;
+    ctx.fillStyle = "rgba(75, 79, 84, 0.70)";
     const footerText = pName
-      ? `Participante: ${pName} · Croquis Morelia · Dibuja tu ciudad de memoria`
-      : "Croquis Morelia · Dibuja tu ciudad de memoria";
-    ctx.fillText(footerText, SHARE_W / 2, 1290);
+      ? `Participante: ${pName} · IMPLAN Morelia · www.implanmorelia.org`
+      : "IMPLAN Morelia · Instituto Municipal de Planeación · www.implanmorelia.org";
+    ctx.fillText(footerText, SHARE_W / 2, 1572);
   }
 
   async function exportCanvasBlob() {
@@ -1030,7 +1419,7 @@
     a.href = url;
     const pName = (state && state.playerName ? state.playerName : "").trim();
     const nameSlug = pName ? `-${pName.toLowerCase().replace(/[^a-z0-9]/g, '_')}` : '';
-    a.download = `croquis-morelia${nameSlug}-${isHardMode() ? 'dificil' : 'normal'}.png`;
+    a.download = `croquis-mental-morelia${nameSlug}-${isHardMode() ? 'dificil' : 'normal'}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1042,25 +1431,25 @@
     const hard = isHardMode();
     const pName = (state && state.playerName ? state.playerName : "").trim();
     const text = pName
-      ? `¡Mira mi croquis de Morelia trazado de memoria por ${pName}! Saqué ${score}/100 en Croquis Morelia (${hard ? 'Modo Difícil' : 'Modo Normal'})!`
+      ? `¡Mira mi croquis mental de Morelia trazado de memoria por ${pName}! Saqué ${score}/100 en Mi Croquis Mental de Morelia (${hard ? 'Modo Difícil' : 'Modo Normal'})!`
       : (hard
-        ? `Dibujé los ríos y ejes de Morelia en modo difícil y saqué ${score}/100 en Croquis Morelia!`
-        : `Dibujé los ríos y monumentos de Morelia de memoria y saqué ${score}/100 en Croquis Morelia!`);
+        ? `Dibujé los ríos y ejes de Morelia en modo difícil y saqué ${score}/100 en Mi Croquis Mental de Morelia!`
+        : `Dibujé los monumentos y ríos de Morelia de memoria y saqué ${score}/100 en Mi Croquis Mental de Morelia!`);
 
     const blob = await exportCanvasBlob();
-    if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "croquis-morelia.png", { type: "image/png" })] })) {
+    if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "croquis-mental-morelia.png", { type: "image/png" })] })) {
       try {
         await navigator.share({
-          title: pName ? `Croquis de Morelia de ${pName}` : "Mi Croquis de Morelia",
+          title: pName ? `Croquis Mental de Morelia de ${pName}` : "Mi Croquis Mental de Morelia",
           text,
-          files: [new File([blob], "croquis-morelia.png", { type: "image/png" })]
+          files: [new File([blob], "croquis-mental-morelia.png", { type: "image/png" })]
         });
         return;
       } catch (e) { /* cancelado */ }
     }
 
     if (navigator.share) {
-      try { await navigator.share({ title: pName ? `Croquis de Morelia de ${pName}` : "Croquis Morelia", text }); } catch (e) { /* cancelado */ }
+      try { await navigator.share({ title: pName ? `Croquis Mental de Morelia de ${pName}` : "Mi Croquis Mental de Morelia", text }); } catch (e) { /* cancelado */ }
     } else {
       descargarBtn.click();
     }
