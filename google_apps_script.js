@@ -190,3 +190,39 @@ function getScoreForLayer(scores, candidates) {
   }
   return "";
 }
+
+/**
+ * FUNCIÓN DE PRUEBA MANUAL:
+ * Si quieres que la carpeta y el Google Sheet se creen AHORITA MISMO en tu Drive:
+ * 1. En la barra superior de script.google.com, en el desplegable de funciones selecciona "probarCreacionManual".
+ * 2. Haz clic en "Ejecutar" (Run).
+ * 3. Listo, ¡aparecerán de inmediato en tu Google Drive!
+ */
+function probarCreacionManual() {
+  const pruebaData = {
+    postData: {
+      contents: JSON.stringify({
+        participante: "Prueba Inicial IMPLAN",
+        dificultad: "normal",
+        globalScore: 100,
+        perLineScores: {
+          "acueducto": 100,
+          "libramiento": 95,
+          "madero": 98,
+          "rio-chiquito": 90,
+          "rio-grande": 92,
+          "calzada-la-huerta": 88,
+          "av-morelos": 94,
+          "ventura-puente": 96
+        },
+        geojson: {
+          type: "FeatureCollection",
+          name: "Prueba Inicial",
+          features: []
+        }
+      })
+    }
+  };
+  const res = doPost(pruebaData);
+  Logger.log("Resultado: " + res.getContent());
+}
