@@ -32,7 +32,7 @@
   </noscript>
 
   <div id="app">
-    <!-- BARRA SUPERIOR INSTITUCIONAL IMPLAN -->
+    <!-- BARRA SUPERIOR INSTITUCIONAL Y CONTROLES CONTINUOS -->
     <header id="top-strip">
       <div id="implan-top-bar">
         <div class="implan-brand">
@@ -41,78 +41,80 @@
           <img src="./img/escudo_morelia_clean.png" alt="Ayuntamiento de Morelia" class="implan-escudo-header" />
           <span class="implan-brand-divider" aria-hidden="true"></span>
           <img src="./img/sigem_gris.png" alt="SIGEM" class="implan-sigem-header" />
-
-
         </div>
       </div>
 
-      <div id="progress-row">
-        <div id="progress-dots" aria-hidden="true"></div>
-        <div id="progress-indicator">0 / 8</div>
-      </div>
-
-      <div id="line-header">
-        <div id="line-medallion" class="medallion">CHI</div>
-        <div class="line-label">
-          <div class="kicker-wrap">
-            <button id="pista-btn" class="pista-btn" type="button" aria-expanded="false"
-              title="Revelar pista geográfica">
-              <svg class="pista-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M9 18h6"></path>
-                <path d="M10 22h4"></path>
-                <path
-                  d="M12 2a7 7 0 0 0-7 7c0 2.5 1.3 4.7 3.3 6 .4.3.7.8.7 1.3V17a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-.7c0-.5.3-1 .7-1.3 2-1.3 3.3-3.5 3.3-6a7 7 0 0 0-7-7z">
-                </path>
-              </svg>
-              <span id="pista-btn-text">Pista</span>
-            </button>
-            <span class="kicker" id="line-kicker" hidden></span>
+      <div id="line-header" class="header-continuous">
+        <div class="header-left">
+          <div id="line-medallion" class="medallion">CHI</div>
+          <div class="line-label">
+            <div class="line-name-row">
+              <span class="line-name" id="line-name">Cargando Morelia…</span>
+              <span class="kicker" id="line-kicker" hidden></span>
+            </div>
           </div>
-          <div class="line-name" id="line-name">Cargando Morelia…</div>
         </div>
-        <div class="header-actions">
-          <button id="reiniciar-btn" class="icon-btn" type="button" aria-label="Reiniciar croquis"
-            title="Reiniciar croquis completo">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-              <polyline points="3 3 3 8 8 8"></polyline>
-            </svg>
-          </button>
-          <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto"
-            title="Información">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-          </button>
-        </div>
-      </div>
 
-      <div id="utility-row">
-        <button class="hard-mode-toggle" id="anchors-toggle" type="button" aria-pressed="false"
-          title="Alternar modo difícil a ciegas">
-          <span class="hard-toggle-stripes" aria-hidden="true">
-            <span></span><span></span><span></span>
-          </span>
-          <span class="hard-toggle-copy">
-            <span class="hard-toggle-main">Modo difícil</span>
-            <span class="hard-toggle-sub">Sin referencias</span>
-          </span>
-        </button>
-
-        <div class="utility-row-right">
-          <button id="borrar-btn" class="icon-btn" type="button" aria-label="Borrar trazo actual" disabled
-            title="Borrar trazo">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 6h18"></path>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <div class="header-right-flow">
+          <button id="pista-btn" class="pista-btn" type="button" aria-expanded="false"
+            title="Revelar pista geográfica">
+            <svg class="pista-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 18h6"></path>
+              <path d="M10 22h4"></path>
+              <path
+                d="M12 2a7 7 0 0 0-7 7c0 2.5 1.3 4.7 3.3 6 .4.3.7.8.7 1.3V17a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-.7c0-.5.3-1 .7-1.3 2-1.3 3.3-3.5 3.3-6a7 7 0 0 0-7-7z">
+              </path>
             </svg>
+            <span id="pista-btn-text">Pista</span>
           </button>
+
+          <div id="utility-row" class="utility-row-inline">
+            <button class="hard-mode-toggle" id="anchors-toggle" type="button" aria-pressed="false"
+              title="Alternar modo difícil a ciegas">
+              <span class="hard-toggle-stripes" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </span>
+              <span class="hard-toggle-copy">
+                <span class="hard-toggle-main">Modo difícil</span>
+                <span class="hard-toggle-sub">Sin referencias</span>
+              </span>
+            </button>
+
+            <button id="borrar-btn" class="icon-btn" type="button" aria-label="Borrar trazo actual" disabled
+              title="Borrar trazo">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div id="progress-row" class="progress-row-inline">
+            <div id="progress-dots" aria-hidden="true"></div>
+            <div id="progress-indicator">0 / 8</div>
+          </div>
+
+          <div class="header-actions">
+            <button id="reiniciar-btn" class="icon-btn" type="button" aria-label="Reiniciar croquis"
+              title="Reiniciar croquis completo">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <polyline points="3 3 3 8 8 8"></polyline>
+              </svg>
+            </button>
+            <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto"
+              title="Información">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </header>
