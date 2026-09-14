@@ -158,7 +158,11 @@
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
       const req = store.put(record);
-      req.onsuccess = () => resolve(record);
+      req.onsuccess = () => {
+        // Enviar automáticamente a Google Sheets / Drive vía Webhook si está configurado
+        sendToGoogleWebhook(record).catch((err) => console.warn("Fallo sincronización Google Webhook:", err));
+        resolve(record);
+      };
       req.onerror = () => reject(req.error);
     });
   }
@@ -307,6 +311,64 @@
     });
   }
 
+  const LS_WEBHOOK_URL_KEY = 'croquis_morelia_webhook_url';
+
+  function getWebhookUrl() {
+    return localStorage.getItem(LS_WEBHOOK_URL_KEY) || (window.MORELIA_CONFIG && window.MORELIA_CONFIG.webhookUrl) || '';
+  }
+
+  function setWebhookUrl(url) {
+    if (!url || typeof url !== 'string' || !url.trim()) {
+      localStorage.removeItem(LS_WEBHOOK_URL_KEY);
+      return '';
+    }
+    const cleanUrl = url.trim();
+    localStorage.setItem(LS_WEBHOOK_URL_KEY, cleanUrl);
+    return cleanUrl;
+  }
+
+  /**
+   * Envía una sesión completa al Webhook de Google Apps Script (Sheets & Drive).
+   */
+  async function sendToGoogleWebhook(record, customWebhookUrl = null) {
+    const url = customWebhookUrl || getWebhookUrl();
+    if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+      return { skipped: true, reason: 'Webhook URL no configurada' };
+    }
+
+    const payload = JSON.stringify({
+      id: record.id,
+      participante: record.participante,
+      fecha: record.fecha,
+      hora: record.hora,
+      timestamp: record.timestamp,
+      dificultad: record.dificultad,
+      globalScore: record.globalScore,
+      perLineScores: record.perLineScores,
+      clientId: record.clientId,
+      geojson: record.geojson,
+      lines: record.lines
+    });
+
+    try {
+      // Usar mode: 'no-cors' con 'text/plain' para que las redirecciones de Google Apps Script no sean bloqueadas
+      await fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: payload
+      });
+
+      console.log('✅ Croquis sincronizado exitosamente con Google Sheets y Google Drive');
+      return { success: true };
+    } catch (err) {
+      console.warn('⚠️ Error enviando al Webhook de Google:', err);
+      return { success: false, error: err };
+    }
+  }
+
   return {
     getDB,
     saveSession,
@@ -318,6 +380,9 @@
     exportSessionsJSON,
     clearAllSessions,
     downloadBlob,
-    slugify
+    slugify,
+    getWebhookUrl,
+    setWebhookUrl,
+    sendToGoogleWebhook
   };
 }));

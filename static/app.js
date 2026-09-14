@@ -1540,6 +1540,9 @@
   const exportarJsonBtn = document.getElementById("exportar-json-btn");
   const limpiarQgisBtn = document.getElementById("limpiar-qgis-btn");
   const descargarGeojsonBtn = document.getElementById("descargar-geojson-btn");
+  const webhookUrlInput = document.getElementById("webhook-url-input");
+  const guardarWebhookBtn = document.getElementById("guardar-webhook-btn");
+  const webhookStatusMsg = document.getElementById("webhook-status-msg");
 
   async function updateQgisBadge() {
     if (!window.MoreliaDB) return;
@@ -1555,6 +1558,9 @@
   function openQgisModal() {
     if (!qgisModal) return;
     updateQgisBadge();
+    if (webhookUrlInput && window.MoreliaDB) {
+      webhookUrlInput.value = MoreliaDB.getWebhookUrl() || "";
+    }
     qgisModal.hidden = false;
     requestAnimationFrame(() => qgisModal.classList.add("visible"));
   }
@@ -1568,6 +1574,16 @@
   qgisAdminBtn?.addEventListener("click", openQgisModal);
   qgisModal?.querySelector(".qgis-close-btn")?.addEventListener("click", closeQgisModal);
   qgisModal?.querySelector(".modal-backdrop")?.addEventListener("click", closeQgisModal);
+
+  guardarWebhookBtn?.addEventListener("click", () => {
+    if (!window.MoreliaDB || !webhookUrlInput) return;
+    const url = webhookUrlInput.value.trim();
+    MoreliaDB.setWebhookUrl(url);
+    if (webhookStatusMsg) {
+      webhookStatusMsg.textContent = url ? "✓ Webhook de Google guardado y listo" : "✓ Webhook desactivado";
+      setTimeout(() => { if (webhookStatusMsg) webhookStatusMsg.textContent = ""; }, 3500);
+    }
+  });
 
   exportarQgisBtn?.addEventListener("click", async () => {
     if (window.MoreliaDB) {
