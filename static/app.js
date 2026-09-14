@@ -247,10 +247,18 @@
       type: "Feature",
       geometry: { type: "MultiPoint", coordinates: [[minLon, minLat], [maxLon, maxLat]] }
     };
+
+    // Márgenes optimizados para que el trazado abarque el largo de la pantalla
+    // sin quedar encogido ni distante ("hasta el largo de cada uno")
+    const isMobile = W <= 520;
+    const padX = isMobile ? 18 : Math.max(28, W * 0.05);
+    const padY = isMobile ? 22 : Math.max(34, H * 0.06);
+
     const cx = W / 2 + pX;
     const cy = H / 2 + pY;
-    const halfW = (W / 2) * (1 - padFrac * 2) * zoom;
-    const halfH = (H / 2) * (1 - padFrac * 2) * zoom;
+    const halfW = (W / 2 - padX) * zoom;
+    const halfH = (H / 2 - padY) * zoom;
+
     return d3.geoMercator().fitExtent([[cx - halfW, cy - halfH], [cx + halfW, cy + halfH]], feature);
   }
 
@@ -346,23 +354,146 @@
       .attr("d", geoPath);
   }
 
+  // Jerarquía y prioridad de puntos de referencia para evitar encimaderos
+  const ANCHOR_PRIORITY_MAP = {
+    "Catedral de Morelia": 1,
+    "Las Tarascas": 2,
+    "Estadio Morelos": 3,
+    "Monumento": 4,
+    "Zoológico": 5,
+    "Deportivo Venustiano": 6,
+    "Bosque Cuauhtémoc": 7,
+    "Universidad Michoacana": 8,
+    "Plaza Las Américas": 9,
+    "El planetario": 10,
+    "Tecnológico de Morelia": 11,
+    "Central de Autobuses": 12,
+    "Los Filtros Viejos": 13,
+    "Tenencia Morelos": 14,
+    "Manantial Mintzita": 15,
+    "Mercado de Abastos": 16,
+    "Ciudad Industrial": 17,
+    "Presa de Coitzio": 18,
+    "Policia y Tránsito": 19,
+    "Deportivo Bicentenario": 20,
+    "Panteón Municipal": 21,
+    "Arboretum": 22,
+    "Pabellon Don Vasco ": 23,
+    "Parque de la Ciudad Industrial": 24
+  };
+
   function renderAnchors() {
     clearLayer(gAnchors);
-    if (isHardMode() || !anchorsList) return;
-    for (const a of anchorsList) {
+    if (isHardMode() || !anchorsList || !projection) return;
+
+    const { W, H } = svgSize();
+    const isMobile = W <= 520;
+    const charWidth = isMobile ? 5.1 : 5.8;
+    const labelHeight = isMobile ? 12 : 14;
+
+    const currentMeta = currentLineMeta();
+    const currentLid = currentMeta ? (currentMeta.id || "").toLowerCase() : "";
+
+    // Ordenar anclas por jerarquía e impulsar los puntos clave del elemento activo
+    const sortedAnchors = anchorsList.slice().sort((a, b) => {
+      let pa = ANCHOR_PRIORITY_MAP[a.name] || 99;
+      let pb = ANCHOR_PRIORITY_MAP[b.name] || 99;
+
+      if (currentLid.includes("madero")) {
+        if (["Catedral de Morelia", "Monumento", "Las Tarascas", "Deportivo Venustiano"].includes(a.name)) pa -= 50;
+        if (["Catedral de Morelia", "Monumento", "Las Tarascas", "Deportivo Venustiano"].includes(b.name)) pb -= 50;
+      } else if (currentLid.includes("chiquito")) {
+        if (["Zoológico", "El planetario", "Universidad Michoacana", "Los Filtros Viejos"].includes(a.name)) pa -= 50;
+        if (["Zoológico", "El planetario", "Universidad Michoacana", "Los Filtros Viejos"].includes(b.name)) pb -= 50;
+      } else if (currentLid.includes("acueducto")) {
+        if (["Las Tarascas", "Bosque Cuauhtémoc", "Deportivo Venustiano", "Catedral de Morelia"].includes(a.name)) pa -= 50;
+        if (["Las Tarascas", "Bosque Cuauhtémoc", "Deportivo Venustiano", "Catedral de Morelia"].includes(b.name)) pb -= 50;
+      } else if (currentLid.includes("morelos")) {
+        if (["Catedral de Morelia", "Estadio Morelos", "Tecnológico de Morelia"].includes(a.name)) pa -= 50;
+        if (["Catedral de Morelia", "Estadio Morelos", "Tecnológico de Morelia"].includes(b.name)) pb -= 50;
+      }
+
+      return pa - pb;
+    });
+
+    const placedBoxes = [];
+
+    function testCollision(box) {
+      const gapX = isMobile ? 6 : 8;
+      const gapY = 3;
+      return placedBoxes.some((p) => !(
+        box.x1 < p.x0 - gapX ||
+        box.x0 > p.x1 + gapX ||
+        box.y1 < p.y0 - gapY ||
+        box.y0 > p.y1 + gapY
+      ));
+    }
+
+    for (const a of sortedAnchors) {
       const pt = projection([a.lon, a.lat]);
       if (!pt) continue;
       const [x, y] = pt;
-      gAnchors.append("circle")
+
+      // Omitir puntos que caigan completamente fuera de la vista
+      if (x < -20 || x > W + 20 || y < -20 || y > H + 20) continue;
+
+      const circle = gAnchors.append("circle")
         .attr("class", "anchor-dot")
         .attr("cx", x)
         .attr("cy", y)
-        .attr("r", 3);
-      gAnchors.append("text")
-        .attr("class", "anchor-label")
-        .attr("x", x + 5)
-        .attr("y", y + 3)
-        .text(a.name);
+        .attr("r", isMobile ? 2.8 : 3.2);
+
+      circle.append("title").text(a.name);
+
+      const name = a.name.trim();
+      const approxW = name.length * charWidth + 8;
+
+      // 4 posiciones candidatas (Derecha, Izquierda, Arriba, Abajo)
+      const candRight = {
+        x0: x + 4, y0: y - labelHeight * 0.7,
+        x1: x + 4 + approxW, y1: y + labelHeight * 0.3,
+        textX: x + 5, textY: y + 3, anchor: "start"
+      };
+      const candLeft = {
+        x0: x - 4 - approxW, y0: y - labelHeight * 0.7,
+        x1: x - 4, y1: y + labelHeight * 0.3,
+        textX: x - 5, textY: y + 3, anchor: "end"
+      };
+      const candTop = {
+        x0: x - approxW / 2, y0: y - labelHeight - 4,
+        x1: x + approxW / 2, y1: y - 4,
+        textX: x, textY: y - 5, anchor: "middle"
+      };
+      const candBottom = {
+        x0: x - approxW / 2, y0: y + 4,
+        x1: x + approxW / 2, y1: y + labelHeight + 4,
+        textX: x, textY: y + 13, anchor: "middle"
+      };
+
+      const candidates = x > W * 0.62
+        ? [candLeft, candBottom, candTop, candRight]
+        : [candRight, candLeft, candTop, candBottom];
+
+      let chosen = null;
+      for (const cand of candidates) {
+        if (cand.x0 >= 4 && cand.x1 <= W - 4 && cand.y0 >= 4 && cand.y1 <= H - 4) {
+          if (!testCollision(cand)) {
+            chosen = cand;
+            break;
+          }
+        }
+      }
+
+      // Si no colisiona, renderizar la etiqueta. Si colisiona, se conserva solo el punto de referencia
+      if (chosen) {
+        placedBoxes.push(chosen);
+        gAnchors.append("text")
+          .attr("class", "anchor-label")
+          .attr("x", chosen.textX)
+          .attr("y", chosen.textY)
+          .attr("text-anchor", chosen.anchor)
+          .text(name);
+      }
     }
   }
 
