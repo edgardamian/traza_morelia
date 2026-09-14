@@ -145,33 +145,44 @@
         </g>
       </svg>
 
-      <!-- TARJETA LATERAL DE REVELADO Y PUNTAJE (A LA IZQUIERDA) -->
+      <!-- TARJETA INFERIOR DE CALIFICACIÓN Y REVELADO (BOTTOM DOCK) -->
       <div id="reveal-banner" role="dialog" aria-labelledby="reveal-tier" aria-live="polite">
-        <div class="reveal-content">
-          <div class="reveal-header">
+        <div class="reveal-dock-header" id="reveal-dock-header">
+          <div class="reveal-score-badge">
+            <span id="reveal-score">0</span>
+            <span class="reveal-pts">pts</span>
+          </div>
+          <div class="reveal-tier-wrap">
             <span id="reveal-hard-label" class="reveal-hard-label" hidden>MODO DIFÍCIL</span>
             <span id="reveal-tier" class="reveal-tier">Moreliano de Cepa</span>
           </div>
-          <div class="reveal-score-wrap">
-            <span id="reveal-score">0</span>
-            <span class="reveal-pts">/100</span>
-          </div>
+          <button id="reveal-toggle-btn" class="reveal-toggle-btn" type="button" aria-expanded="true"
+            title="Minimizar / Explorar mapa completo">
+            <span class="toggle-text-hide">Ver mapa</span>
+            <span class="toggle-text-show">Ver puntaje</span>
+            <svg class="toggle-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+        </div>
+        <div class="reveal-dock-body" id="reveal-dock-body">
           <div class="reveal-phrase-box">
-            <svg class="quote-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <svg class="quote-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path
                 d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
             </svg>
             <p id="reveal-phrase" class="reveal-phrase">Cálculo de similitud espacial...</p>
           </div>
+          <button id="reveal-next" class="pill-btn highlight reveal-next-btn" type="button">
+            <span class="reveal-next-text">Siguiente elemento</span>
+            <svg class="reveal-next-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
         </div>
-        <button id="reveal-next" class="pill-btn highlight reveal-next-btn" type="button">
-          <span class="reveal-next-text">Siguiente elemento</span>
-          <svg class="reveal-next-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
       </div>
 
       <!-- CONTROLES DE ZOOM FLOTANTES -->

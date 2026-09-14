@@ -159,8 +159,28 @@
   const revealScoreEl = document.getElementById("reveal-score");
   const revealPhraseEl = document.getElementById("reveal-phrase");
   const revealNextBtn = document.getElementById("reveal-next");
+  const revealToggleBtn = document.getElementById("reveal-toggle-btn");
+  const revealDockHeader = document.getElementById("reveal-dock-header");
 
   revealBanner?.addEventListener("pointerdown", (e) => e.stopPropagation());
+
+  function toggleRevealMinimize() {
+    if (!revealBanner) return;
+    const isMin = revealBanner.classList.toggle("is-minimized");
+    if (revealToggleBtn) {
+      revealToggleBtn.setAttribute("aria-expanded", String(!isMin));
+      revealToggleBtn.title = isMin ? "Expandir puntaje" : "Minimizar / Explorar mapa completo";
+    }
+  }
+  revealToggleBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleRevealMinimize();
+  });
+  revealDockHeader?.addEventListener("click", () => {
+    if (revealBanner.classList.contains("is-minimized")) {
+      toggleRevealMinimize();
+    }
+  });
 
   const finalSheet = document.getElementById("final-sheet");
   const flipCard = document.getElementById("flip-card");
@@ -205,11 +225,13 @@
   const gTruth = d3.select("#layer-truth");
   const gUserdraw = d3.select("#layer-userdraw");
 
-  // Proyección D3 y Control de Zoom
+  // Proyección D3, Control de Zoom y Desplazamiento (Pan)
   let projection = null;
   let currentZoom = 1.0;
+  let panX = 0;
+  let panY = 0;
   const MIN_ZOOM = 0.5;
-  const MAX_ZOOM = 3.5;
+  const MAX_ZOOM = 4.0;
   const ZOOM_STEP = 1.25;
 
   function svgSize() {
@@ -217,7 +239,7 @@
     return { W: rect.width || 400, H: rect.height || 600 };
   }
 
-  function fitProjectionToBBox(bbox, padFrac, zoom = 1.0) {
+  function fitProjectionToBBox(bbox, padFrac, zoom = 1.0, pX = 0, pY = 0) {
     const { W, H } = svgSize();
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     const [minLon, minLat, maxLon, maxLat] = bbox;
@@ -225,31 +247,17 @@
       type: "Feature",
       geometry: { type: "MultiPoint", coordinates: [[minLon, minLat], [maxLon, maxLat]] }
     };
-    const cx = W / 2;
-    const cy = H / 2;
+    const cx = W / 2 + pX;
+    const cy = H / 2 + pY;
     const halfW = (W / 2) * (1 - padFrac * 2) * zoom;
     const halfH = (H / 2) * (1 - padFrac * 2) * zoom;
     return d3.geoMercator().fitExtent([[cx - halfW, cy - halfH], [cx + halfW, cy + halfH]], feature);
   }
 
-  function updateZoomUI() {
-    if (zoomLevelText) {
-      zoomLevelText.textContent = `${Math.round(currentZoom * 100)}%`;
-    }
-    if (zoomInBtn) zoomInBtn.disabled = currentZoom >= MAX_ZOOM - 0.05;
-    if (zoomOutBtn) zoomOutBtn.disabled = currentZoom <= MIN_ZOOM + 0.05;
-    if (zoomResetBtn) {
-      const isDefault = Math.abs(currentZoom - 1.0) < 0.02;
-      zoomResetBtn.title = isDefault ? "Encuadre óptimo (100%)" : "Restablecer encuadre (100%)";
-      zoomResetBtn.style.color = isDefault ? "" : "var(--cantera-rosa)";
-    }
-  }
-
-  function applyZoom(newZoom) {
-    currentZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+  function applyProjectionAndRender() {
     const meta = currentLineMeta();
     if (!meta) return;
-    projection = fitProjectionToBBox(meta.bbox, PAD_FRAC_LINE, currentZoom);
+    projection = fitProjectionToBBox(meta.bbox, PAD_FRAC_LINE, currentZoom, panX, panY);
     renderValle();
     renderAnchors();
     renderUserDraw();
@@ -259,9 +267,32 @@
     updateZoomUI();
   }
 
+  function updateZoomUI() {
+    if (zoomLevelText) {
+      zoomLevelText.textContent = `${Math.round(currentZoom * 100)}%`;
+    }
+    if (zoomInBtn) zoomInBtn.disabled = currentZoom >= MAX_ZOOM - 0.05;
+    if (zoomOutBtn) zoomOutBtn.disabled = currentZoom <= MIN_ZOOM + 0.05;
+    if (zoomResetBtn) {
+      const isDefault = Math.abs(currentZoom - 1.0) < 0.02 && Math.abs(panX) < 1 && Math.abs(panY) < 1;
+      zoomResetBtn.title = isDefault ? "Encuadre óptimo (100%)" : "Restablecer encuadre y centrado (100%)";
+      zoomResetBtn.style.color = isDefault ? "" : "var(--cantera-rosa)";
+    }
+  }
+
+  function applyZoom(newZoom) {
+    currentZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+    applyProjectionAndRender();
+  }
+
   function zoomIn() { applyZoom(currentZoom * ZOOM_STEP); }
   function zoomOut() { applyZoom(currentZoom / ZOOM_STEP); }
-  function resetZoom() { applyZoom(1.0); }
+  function resetZoom() {
+    currentZoom = 1.0;
+    panX = 0;
+    panY = 0;
+    applyProjectionAndRender();
+  }
 
   zoomInBtn?.addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
   zoomOutBtn?.addEventListener("click", (e) => { e.stopPropagation(); zoomOut(); });
@@ -269,7 +300,7 @@
 
   // Soporte para rueda del ratón sobre el mapa
   mapWrap.addEventListener("wheel", (e) => {
-    if (revealActive || isDrawing) return;
+    if (isDrawing) return;
     e.preventDefault();
     if (e.deltaY < 0) {
       applyZoom(currentZoom * 1.12);
@@ -407,10 +438,37 @@
       .attr("d", pathStringFromCoords(coords, projection));
   }
 
-  // Captura de Dibujo
+  // Soporte de Navegación (Pan y Multi-touch Pinch Zoom) y Captura de Dibujo
   let currentStrokePoints = [];
   let isDrawing = false;
   let lastCapturePx = null;
+
+  let isPanning = false;
+  let panStart = { x: 0, y: 0 };
+  let panOffsetStart = { x: 0, y: 0 };
+  let isSpacePressed = false;
+
+  // Seguimiento de múltiples toques (pantallas táctiles)
+  const activePointers = new Map();
+  let touchPinchStartDist = 0;
+  let touchPinchStartZoom = 1.0;
+  let touchPinchStartCenter = { x: 0, y: 0 };
+  let touchPinchStartPan = { x: 0, y: 0 };
+  let isMultiTouch = false;
+
+  // Detección de tecla Space para desplazamiento en escritorio
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName) && !revealActive) {
+      isSpacePressed = true;
+      if (!isDrawing) svg.style.cursor = "grab";
+    }
+  });
+  window.addEventListener("keyup", (e) => {
+    if (e.code === "Space") {
+      isSpacePressed = false;
+      if (!isPanning) svg.style.cursor = revealActive ? "grab" : "crosshair";
+    }
+  });
 
   function getSvgPoint(ev) {
     const rect = svg.getBoundingClientRect();
@@ -436,34 +494,123 @@
   }
 
   function onPointerDown(ev) {
-    if (revealActive) return;
-    ev.preventDefault();
-    svg.setPointerCapture(ev.pointerId);
-    isDrawing = true;
-    currentStrokePoints = [];
-    lastCapturePx = null;
-    if (drawPrompt) {
-      drawPrompt.classList.add("hidden");
+    activePointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+
+    // 1. En modo revelado: SIEMPRE se desplaza el mapa (pan) con 1 dedo o ratón
+    if (revealActive) {
+      isPanning = true;
+      panStart = { x: ev.clientX, y: ev.clientY };
+      panOffsetStart = { x: panX, y: panY };
+      svg.style.cursor = "grabbing";
+      try { svg.setPointerCapture(ev.pointerId); } catch (_) {}
+      return;
     }
-    capturePoint(ev);
+
+    // 2. Multitouch táctil (2 dedos: pinch-to-zoom y pan simultáneos)
+    if (activePointers.size >= 2) {
+      isMultiTouch = true;
+      if (isDrawing) {
+        // Cancelar trazo accidental al poner el segundo dedo
+        isDrawing = false;
+        currentStrokePoints = [];
+        lastCapturePx = null;
+        renderUserDraw();
+        updateListoState();
+        updateBorrarState();
+      }
+      const pts = Array.from(activePointers.values());
+      touchPinchStartDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      touchPinchStartZoom = currentZoom;
+      touchPinchStartCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+      touchPinchStartPan = { x: panX, y: panY };
+      return;
+    }
+
+    // 3. Ratón en escritorio: desplazamiento con botón central (1), botón derecho (2) o tecla Space
+    if (ev.pointerType === "mouse" && (ev.button === 1 || ev.button === 2 || isSpacePressed)) {
+      ev.preventDefault();
+      isPanning = true;
+      panStart = { x: ev.clientX, y: ev.clientY };
+      panOffsetStart = { x: panX, y: panY };
+      svg.style.cursor = "grabbing";
+      try { svg.setPointerCapture(ev.pointerId); } catch (_) {}
+      return;
+    }
+
+    // 4. Dibujo normal con 1 dedo o clic izquierdo
+    if (ev.button === 0 && !isSpacePressed) {
+      ev.preventDefault();
+      try { svg.setPointerCapture(ev.pointerId); } catch (_) {}
+      isDrawing = true;
+      currentStrokePoints = [];
+      lastCapturePx = null;
+      if (drawPrompt) drawPrompt.classList.add("hidden");
+      capturePoint(ev);
+    }
   }
 
   function onPointerMove(ev) {
-    if (!isDrawing) return;
-    ev.preventDefault();
-    capturePoint(ev);
+    if (activePointers.has(ev.pointerId)) {
+      activePointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    }
+
+    // Gesto táctil de 2 dedos (Pinch-zoom y Pan)
+    if (isMultiTouch && activePointers.size >= 2) {
+      ev.preventDefault();
+      const pts = Array.from(activePointers.values());
+      const currDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      const currCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+
+      if (touchPinchStartDist > 10) {
+        const ratio = currDist / touchPinchStartDist;
+        currentZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, touchPinchStartZoom * ratio));
+      }
+      panX = touchPinchStartPan.x + (currCenter.x - touchPinchStartCenter.x);
+      panY = touchPinchStartPan.y + (currCenter.y - touchPinchStartCenter.y);
+      applyProjectionAndRender();
+      return;
+    }
+
+    // Desplazamiento (Pan) activo
+    if (isPanning) {
+      ev.preventDefault();
+      const dx = ev.clientX - panStart.x;
+      const dy = ev.clientY - panStart.y;
+      panX = panOffsetStart.x + dx;
+      panY = panOffsetStart.y + dy;
+      applyProjectionAndRender();
+      return;
+    }
+
+    // Dibujo activo
+    if (isDrawing) {
+      ev.preventDefault();
+      capturePoint(ev);
+    }
   }
 
   function onPointerUp(ev) {
-    if (!isDrawing) return;
-    ev.preventDefault();
-    isDrawing = false;
+    activePointers.delete(ev.pointerId);
+    try { svg.releasePointerCapture(ev.pointerId); } catch (_) {}
+
+    if (activePointers.size < 2) {
+      isMultiTouch = false;
+    }
+    if (isPanning && activePointers.size === 0) {
+      isPanning = false;
+      svg.style.cursor = revealActive ? "grab" : (isSpacePressed ? "grab" : "crosshair");
+    }
+    if (isDrawing) {
+      ev.preventDefault();
+      isDrawing = false;
+    }
   }
 
   svg.addEventListener("pointerdown", onPointerDown, { passive: false });
   svg.addEventListener("pointermove", onPointerMove, { passive: false });
   svg.addEventListener("pointerup", onPointerUp, { passive: false });
   svg.addEventListener("pointercancel", onPointerUp, { passive: false });
+  svg.addEventListener("contextmenu", (e) => e.preventDefault());
 
   function updateListoState() {
     if (revealActive) return;
@@ -547,8 +694,13 @@
     state = freshRunState(diff, "");
     currentStrokePoints = [];
     isDrawing = false;
+    currentZoom = 1.0;
+    panX = 0;
+    panY = 0;
+    document.body.classList.remove("reveal-active");
+    svg.style.cursor = "crosshair";
     finalSheet.hidden = true;
-    revealBanner.classList.remove("visible");
+    revealBanner.classList.remove("visible", "is-minimized");
     revealActive = false;
     anchorsToggle.disabled = false;
     clearLayer(gUserdraw);
@@ -593,7 +745,12 @@
     borrar();
     clearLayer(gTruth);
     currentRevealTruth = null;
-    revealBanner.classList.remove("visible");
+    currentZoom = 1.0;
+    panX = 0;
+    panY = 0;
+    document.body.classList.remove("reveal-active");
+    svg.style.cursor = "crosshair";
+    revealBanner.classList.remove("visible", "is-minimized");
 
     const meta = currentLineMeta();
     if (!meta) {
@@ -618,11 +775,7 @@
     renderProgressDots();
     verMapaBtn.disabled = drawnCount() === 0;
 
-    currentZoom = 1.0;
-    updateZoomUI();
-    projection = fitProjectionToBBox(meta.bbox, PAD_FRAC_LINE, currentZoom);
-    renderValle();
-    renderAnchors();
+    applyProjectionAndRender();
     updateListoState();
   }
 
@@ -645,6 +798,9 @@
     revealTierEl.textContent = tierTitle;
     revealScoreEl.textContent = "0";
     revealPhraseEl.textContent = `"${phrase}"`;
+    document.body.classList.add("reveal-active");
+    svg.style.cursor = "grab";
+    revealBanner.classList.remove("is-minimized");
     revealBanner.classList.add("visible");
     tickScore(revealScoreEl, score);
 
@@ -661,6 +817,8 @@
       if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
       revealNextBtn.onclick = null;
       revealActive = false;
+      document.body.classList.remove("reveal-active");
+      svg.style.cursor = "crosshair";
       anchorsToggle.disabled = false;
       advanceTurn();
     };
@@ -714,7 +872,12 @@
 
   function advanceTurn() {
     clearLayer(gTruth);
-    revealBanner.classList.remove("visible");
+    document.body.classList.remove("reveal-active");
+    revealBanner.classList.remove("visible", "is-minimized");
+    currentZoom = 1.0;
+    panX = 0;
+    panY = 0;
+    svg.style.cursor = "crosshair";
     if (drawnCount() >= state.order.length) {
       showFinalSheet();
       return;
@@ -1590,16 +1753,7 @@
     resizeTimer = setTimeout(() => {
       if (!state) return;
       if (finalSheet.hidden) {
-        const meta = currentLineMeta();
-        if (meta) {
-          projection = fitProjectionToBBox(meta.bbox, PAD_FRAC_LINE, currentZoom);
-          renderValle();
-          renderAnchors();
-          renderUserDraw();
-          if (currentRevealTruth) {
-            renderTruthStatic(currentRevealTruth.coords, currentRevealTruth.color);
-          }
-        }
+        applyProjectionAndRender();
       } else {
         renderFinalMap();
       }

@@ -636,124 +636,191 @@ html, body {
   50% { transform: translateX(-50%) scale(1.02); opacity: 1; }
 }
 
-/* Tarjeta Lateral de Revelado y Puntaje (A la Izquierda) */
+/* ==========================================================================
+   TARJETA INFERIOR DE CALIFICACIÓN Y REVELADO (BOTTOM DOCK)
+   Ubicada en la parte inferior, compacta y no invasiva, dejando el mapa visible
+   ========================================================================== */
 #reveal-banner {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  bottom: auto;
-  right: auto;
-  width: 380px;
-  max-width: calc(100% - 40px);
-  max-height: calc(100% - 40px);
-  overflow-y: auto;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(calc(100% + 30px));
+  width: calc(100% - 24px);
+  max-width: 640px;
   background: var(--bg-surface-translucent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-lg);
-  padding: 22px;
+  padding: 12px 16px;
   box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  transform: translateX(calc(-100% - 35px));
+  gap: 8px;
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, max-height 0.3s ease;
   z-index: 30;
 }
 
 #reveal-banner.visible {
-  transform: translateX(0);
+  transform: translateX(-50%) translateY(0);
   opacity: 1;
   pointer-events: auto;
 }
 
-.reveal-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* Ocultar barra inferior estándar durante el revelado para maximizar el mapa */
+body.reveal-active #bottom-cta {
+  display: none !important;
 }
 
-.reveal-header {
+.reveal-dock-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 8px;
+}
+
+.reveal-score-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--implan-green);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+
+#reveal-score {
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--implan-green);
+  letter-spacing: -0.5px;
+}
+
+.reveal-pts {
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.reveal-tier-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .reveal-hard-label {
   background: #e63946;
   color: #fff;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 4px;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .reveal-tier {
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 800;
   color: var(--cantera-rosa-dark);
   letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.reveal-score-wrap {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-#reveal-score {
+.reveal-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 3px 9px;
   font-family: var(--font-display);
-  font-size: 3.4rem;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--text-primary);
-  letter-spacing: -1.5px;
-}
-
-.reveal-pts {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.reveal-toggle-btn:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.toggle-chevron {
+  transition: transform 0.25s ease;
+}
+
+.toggle-text-show { display: none; }
+.toggle-text-hide { display: inline; }
+
+/* Estado Minimizado */
+#reveal-banner.is-minimized .toggle-chevron {
+  transform: rotate(180deg);
+}
+
+#reveal-banner.is-minimized .toggle-text-hide { display: none; }
+#reveal-banner.is-minimized .toggle-text-show { display: inline; }
+
+#reveal-banner.is-minimized .reveal-dock-body {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.reveal-dock-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+  max-height: 250px;
+  opacity: 1;
 }
 
 .reveal-phrase-box {
   position: relative;
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
-  border-left: 4px solid var(--cantera-rosa);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  padding: 14px 16px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  border-left: 3.5px solid var(--cantera-rosa);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .quote-icon {
-  position: absolute;
-  top: 10px;
-  right: 12px;
   color: var(--cantera-rosa);
-  opacity: 0.25;
-  pointer-events: none;
+  opacity: 0.3;
+  flex-shrink: 0;
 }
 
 .reveal-phrase {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 0.88rem;
   font-weight: 600;
   font-style: italic;
   color: var(--text-primary);
-  line-height: 1.45;
+  line-height: 1.35;
   margin: 0;
-  padding-right: 18px;
 }
 
 .header-actions {
@@ -794,6 +861,31 @@ html, body {
 
 .reveal-next-btn:hover .reveal-next-arrow {
   transform: translateX(3px);
+}
+
+@media (min-width: 640px) {
+  #reveal-banner {
+    bottom: 16px;
+    padding: 10px 18px;
+    max-width: 680px;
+    gap: 10px;
+  }
+  .reveal-dock-body {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .reveal-phrase-box {
+    flex: 1;
+    min-height: 44px;
+    margin: 0;
+  }
+  .reveal-next-btn {
+    width: auto;
+    white-space: nowrap;
+    padding: 11px 22px;
+    flex-shrink: 0;
+  }
 }
 
 /* ==========================================================================
@@ -1670,6 +1762,8 @@ html, body {
 
 /* ==========================================================================
    RESPONSIVIDAD
+/* ==========================================================================
+   RESPONSIVIDAD AVANZADA (MÓVILES, TABLETS Y ESCRITORIO)
    ========================================================================== */
 @media (min-width: 600px) {
   #top-strip {
@@ -1681,30 +1775,148 @@ html, body {
     padding-right: 24px;
   }
   #reveal-banner {
-    top: 24px;
-    left: 24px;
-    width: 390px;
-    transform: translateX(calc(-100% - 35px));
+    bottom: 16px;
+    padding: 12px 18px;
+    border-radius: var(--radius-lg);
   }
-  #reveal-banner.visible {
-    transform: translateX(0);
+  .reveal-dock-body {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .reveal-phrase-box {
+    flex: 1;
+  }
+  .reveal-next-btn {
+    width: auto;
+    min-width: 190px;
+    height: 44px;
+    flex-shrink: 0;
   }
 }
 
 @media (max-width: 480px) {
+  #top-strip {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+    gap: 6px;
+  }
+
+  .implan-logo-header {
+    height: 22px;
+  }
+  .implan-escudo-header {
+    height: 20px;
+  }
+  .implan-sigem-header {
+    height: 19px;
+  }
+  .implan-tagline {
+    font-size: 0.62rem;
+  }
+  .implan-subtag {
+    display: none;
+  }
+
+  #line-header {
+    gap: 9px;
+  }
+  .medallion {
+    width: 38px;
+    height: 38px;
+    font-size: 0.90rem;
+  }
+  .line-name {
+    font-size: 1.15rem;
+  }
+
+  #utility-row {
+    gap: 6px;
+  }
+  .hard-mode-toggle {
+    padding: 3px 8px 3px 5px;
+    gap: 5px;
+  }
+  .hard-toggle-main {
+    font-size: 0.70rem;
+  }
+  .hard-toggle-sub {
+    display: none;
+  }
+  .utility-row-right {
+    gap: 6px;
+  }
+  .utility-row-right .icon-btn {
+    width: 33px;
+    height: 33px;
+  }
+  .progress-dot {
+    width: 6px;
+    height: 6px;
+  }
+  #progress-indicator {
+    font-size: 0.75rem;
+  }
+
+  .zoom-controls {
+    right: 10px;
+    top: 10px;
+  }
+  .zoom-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .draw-prompt {
+    top: 10px;
+    max-width: calc(100% - 95px);
+    font-size: 0.76rem;
+    padding: 5px 12px;
+  }
+
   #reveal-banner {
-    top: 12px;
-    left: 12px;
-    width: calc(100% - 24px);
-    max-width: 340px;
-    padding: 16px;
-    gap: 12px;
+    bottom: 8px;
+    width: calc(100% - 16px);
+    padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 8px);
+    gap: 7px;
   }
   #reveal-score {
-    font-size: 2.8rem;
+    font-size: 1.5rem;
+  }
+  .reveal-tier {
+    font-size: 0.92rem;
   }
   .reveal-phrase {
-    font-size: 1.05rem;
+    font-size: 0.82rem;
+  }
+  .reveal-next-btn {
+    height: 42px;
+    font-size: 0.90rem;
+  }
+
+  #bottom-cta {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    gap: 6px;
+  }
+  .pill-btn {
+    height: 45px;
+    font-size: 0.94rem;
+  }
+
+  .welcome-modal-content {
+    padding: 16px 14px 12px;
+  }
+  .welcome-implan-logo {
+    height: 38px;
+  }
+  .welcome-escudo-logo {
+    height: 34px;
+  }
+  .welcome-sigem-logo {
+    height: 32px;
   }
 }
 
