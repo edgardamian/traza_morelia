@@ -41,7 +41,7 @@
           <img src="./static/img/escudo_morelia_clean.png" alt="Ayuntamiento de Morelia" class="implan-escudo-header" />
           <span class="implan-brand-divider" aria-hidden="true"></span>
           <img src="./static/img/sigem_gris.png" alt="SIGEM" class="implan-sigem-header" />
-          
+
 
         </div>
       </div>
@@ -80,7 +80,7 @@
               <polyline points="3 3 3 8 8 8"></polyline>
             </svg>
           </button>
-                    <button id="qgis-admin-btn" class="icon-btn" type="button" aria-label="Estudio y exportación a QGIS"
+          <button id="qgis-admin-btn" class="icon-btn" type="button" aria-label="Estudio y exportación a QGIS"
             title="Datos del Estudio / Exportar a QGIS">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
@@ -243,7 +243,7 @@
                 <img src="./static/img/escudo_morelia_clean.png" alt="Morelia" class="share-escudo-logo" />
                 <span class="share-brand-sep" aria-hidden="true"></span>
                 <img src="./static/img/sigem_gris.png" alt="SIGEM" class="share-sigem-logo" />
-                
+
               </div>
               <div class="share-card-brand">
                 <span class="brand-title" id="share-card-title">Traza Morelia</span>
@@ -311,7 +311,8 @@
 
             <div class="share-card-footer">
               <div class="share-mobility-banner-wrap">
-                <img src="./static/img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="share-mobility-banner" />
+                <img src="./static/img/cenefa_movilidad.png" alt="Movilidad Sustentable"
+                  class="share-mobility-banner" />
               </div>
               <span id="share-card-footer-text">IMPLAN Morelia · Instituto Municipal de Planeación ·
                 www.implanmorelia.org</span>
@@ -340,13 +341,14 @@
               </svg>
               <span>Guardar imagen</span>
             </button>
-                        <button id="descargar-geojson-btn" class="pill-btn secondary" type="button"
+            <button id="descargar-geojson-btn" class="pill-btn secondary" type="button"
               title="Descargar archivo vectorial GeoJSON del croquis">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                </path>
               </svg>
               <span>Descargar mi GeoJSON</span>
             </button>
@@ -385,8 +387,6 @@
             class="welcome-escudo-logo" />
           <span class="welcome-logo-sep" aria-hidden="true"></span>
           <img src="./static/img/sigem_gris.png" alt="SIGEM Morelia" class="welcome-sigem-logo" />
-          
-           el.style.display='none');" />
         </div>
       </div>
       <div class="modal-header">
@@ -449,7 +449,7 @@
     </div>
   </div>
 
-    <!-- MODAL ESTUDIO / EXPORTACIÓN QGIS (INDEXEDDB) -->
+  <!-- MODAL ESTUDIO / EXPORTACIÓN QGIS (INDEXEDDB) -->
   <div id="qgis-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="qgis-modal-title">
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content qgis-modal-content">
@@ -461,8 +461,9 @@
         <button class="modal-close-btn qgis-close-btn" type="button" aria-label="Cerrar modal">&times;</button>
       </div>
       <div class="modal-body">
-        <p>Los croquis trazados en este dispositivo se almacenan en la memoria local del navegador (<strong>IndexedDB</strong>) de forma 100% offline.</p>
-        
+        <p>Los croquis trazados en este dispositivo se almacenan en la memoria local del navegador
+          (<strong>IndexedDB</strong>) de forma 100% offline.</p>
+
         <div class="qgis-stats-box">
           <div class="qgis-stats-number" id="qgis-modal-count">0</div>
           <div class="qgis-stats-label">
@@ -473,7 +474,8 @@
 
         <div class="qgis-actions-list">
           <button id="exportar-qgis-btn" class="pill-btn primary" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -481,14 +483,16 @@
             <span>Descargar GeoJSON Consolidado (para QGIS)</span>
           </button>
           <button id="exportar-json-btn" class="pill-btn secondary" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <polyline points="16 18 22 12 16 6"></polyline>
               <polyline points="8 6 2 12 8 18"></polyline>
             </svg>
             <span>Descargar Copia de Seguridad (JSON)</span>
           </button>
           <button id="limpiar-qgis-btn" class="pill-btn ghost" type="button" style="color: #c45b43;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
@@ -497,7 +501,9 @@
         </div>
 
         <div class="qgis-qgis-hint">
-          <strong>Tip SIG:</strong> Arrastra el archivo <code>.geojson</code> descargado directamente al lienzo de <strong>QGIS</strong> para visualizar todas las líneas trazadas, filtrar por participante o generar mapas de calor con las capas oficiales.
+          <strong>Tip SIG:</strong> Arrastra el archivo <code>.geojson</code> descargado directamente al lienzo de
+          <strong>QGIS</strong> para visualizar todas las líneas trazadas, filtrar por participante o generar mapas de
+          calor con las capas oficiales.
         </div>
       </div>
     </div>
@@ -554,7 +560,7 @@
     </div>
   </div>
 
-    <script src="./static/vendor/d3.v7.min.js"></script>
+  <script src="./static/vendor/d3.v7.min.js"></script>
   <script src="./static/scoring.js"></script>
   <script src="./data/morelia_data.js"></script>
   <script src="./static/db.js"></script>
