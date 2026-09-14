@@ -8,7 +8,7 @@
   <title>Traza Morelia | IMPLAN</title>
   <meta name="description"
     content="Plataforma de Percepción Geográfica y Memoria Espacial del Instituto Municipal de Planeación de Morelia (IMPLAN Morelia)." />
-  <link rel="icon" type="image/png" href="./static/img/logo_implan_sin_slogan.png" />
+  <link rel="icon" type="image/png" href="./img/logo_implan_sin_slogan.png" />
   <meta name="theme-color" id="theme-color-meta" content="#00833e" />
   <meta name="color-scheme" content="light dark" />
 
@@ -23,7 +23,7 @@
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="./static/style.css" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 
 <body data-difficulty="normal">
@@ -36,11 +36,13 @@
     <header id="top-strip">
       <div id="implan-top-bar">
         <div class="implan-brand">
-          <img src="./static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="implan-logo-header" />
+          <img src="./img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="implan-logo-header" />
           <span class="implan-brand-divider" aria-hidden="true"></span>
-          <img src="./static/img/escudo_morelia_clean.png" alt="Ayuntamiento de Morelia" class="implan-escudo-header" />
+          <img src="./img/escudo_morelia_clean.png" alt="Ayuntamiento de Morelia" class="implan-escudo-header" />
           <span class="implan-brand-divider" aria-hidden="true"></span>
-          <img src="./static/img/sigem_gris.png" alt="SIGEM" class="implan-sigem-header" />
+          <img src="./img/sigem_gris.png" alt="SIGEM" class="implan-sigem-header" />
+          
+
         </div>
       </div>
 
@@ -78,7 +80,7 @@
               <polyline points="3 3 3 8 8 8"></polyline>
             </svg>
           </button>
-          <button id="qgis-admin-btn" class="icon-btn" type="button" aria-label="Estudio y exportación a QGIS"
+                    <button id="qgis-admin-btn" class="icon-btn" type="button" aria-label="Estudio y exportación a QGIS"
             title="Datos del Estudio / Exportar a QGIS">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
@@ -106,89 +108,142 @@
           <span class="hard-toggle-stripes" aria-hidden="true">
             <span></span><span></span><span></span>
           </span>
-          <span class="hard-toggle-label">Modo difícil</span>
+          <span class="hard-toggle-copy">
+            <span class="hard-toggle-main">Modo difícil</span>
+            <span class="hard-toggle-sub">Sin referencias</span>
+          </span>
         </button>
 
-        <div id="zoom-controls">
-          <button id="zoom-in-btn" class="icon-btn sm" type="button" aria-label="Acercar mapa">+</button>
-          <button id="zoom-out-btn" class="icon-btn sm" type="button" aria-label="Alejar mapa">&minus;</button>
-          <button id="zoom-reset-btn" class="icon-btn sm" type="button" aria-label="Centrar mapa">Centrar</button>
+        <div class="utility-row-right">
+          <button id="borrar-btn" class="icon-btn" type="button" aria-label="Borrar trazo actual" disabled
+            title="Borrar trazo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"></path>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
         </div>
       </div>
     </header>
 
-    <!-- ÁREA DE DIBUJO Y LIENZO SVG D3 -->
-    <main id="canvas-wrap">
-      <svg id="map" preserveAspectRatio="xMidYMid meet"></svg>
+    <!-- LIENZO DE MAPA SVG -->
+    <main id="map-wrap">
+      <svg id="map" preserveAspectRatio="xMidYMid meet" role="img"
+        aria-label="Mapa interactivo de Morelia para dibujar de memoria">
+        <defs>
+          <filter id="bloom" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur2" />
+            <feMerge>
+              <feMergeNode in="blur2" />
+              <feMergeNode in="blur1" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
 
-      <!-- LETRERO DINÁMICO DE MISIÓN / INDICACIÓN ACTIVA -->
-      <aside id="draw-prompt-banner" class="draw-prompt-banner" role="status" aria-live="polite">
-        <span class="draw-prompt-icon" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
-            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
-            <path d="M2 2l7.586 7.586"></path>
-            <circle cx="11" cy="11" r="2"></circle>
-          </svg>
-        </span>
-        <span id="draw-prompt-text">Traza de memoria la línea solicitada sobre la ciudad de Morelia.</span>
-      </aside>
+        <g id="zoom-root">
+          <!-- Silueta del Valle / Mancha Urbana -->
+          <g id="layer-valle"></g>
+          <!-- Puntos de Ancla / Referencias -->
+          <g id="layer-anchors"></g>
+          <!-- Geometría Real Revelada -->
+          <g id="layer-truth"></g>
+          <!-- Trazo del Usuario -->
+          <g id="layer-userdraw"></g>
+        </g>
+      </svg>
 
-      <!-- NOTIFICACIÓN FLOTANTE (REVELACIÓN DE PUNTAJE Y VERDAD CARTOGRÁFICA) -->
-      <div id="reveal-banner" class="reveal-banner" role="alert" aria-live="polite">
-        <div class="reveal-score-group">
-          <div class="reveal-score" id="reveal-score">0</div>
-          <div class="reveal-score-label">pts</div>
-        </div>
-        <div class="reveal-details">
-          <div class="reveal-tier" id="reveal-tier">Bien ubicado</div>
-          <div class="reveal-phrase" id="reveal-phrase">"Traes Morelia bien fresca en la memoria."</div>
-          <div class="reveal-legend">
-            <span class="legend-chip user-chip">Tu memoria</span>
-            <span class="legend-chip truth-chip">Realidad</span>
+      <!-- TARJETA LATERAL DE REVELADO Y PUNTAJE (A LA IZQUIERDA) -->
+      <div id="reveal-banner" role="dialog" aria-labelledby="reveal-tier" aria-live="polite">
+        <div class="reveal-content">
+          <div class="reveal-header">
+            <span id="reveal-hard-label" class="reveal-hard-label" hidden>MODO DIFÍCIL</span>
+            <span id="reveal-tier" class="reveal-tier">Moreliano de Cepa</span>
+          </div>
+          <div class="reveal-score-wrap">
+            <span id="reveal-score">0</span>
+            <span class="reveal-pts">/100</span>
+          </div>
+          <div class="reveal-phrase-box">
+            <svg class="quote-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+            </svg>
+            <p id="reveal-phrase" class="reveal-phrase">Cálculo de similitud espacial...</p>
           </div>
         </div>
-        <button id="reveal-next-btn" class="pill-btn highlight sm" type="button">Continuar &rarr;</button>
+        <button id="reveal-next" class="pill-btn highlight reveal-next-btn" type="button">
+          <span class="reveal-next-text">Siguiente elemento</span>
+          <svg class="reveal-next-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- CONTROLES DE ZOOM FLOTANTES -->
+      <div id="zoom-controls" class="zoom-controls" role="group" aria-label="Controles de zoom del mapa">
+        <button id="zoom-in-btn" class="zoom-btn" type="button" aria-label="Acercar mapa" title="Acercar mapa (+)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <button id="zoom-reset-btn" class="zoom-btn zoom-reset" type="button" aria-label="Restablecer zoom"
+          title="Restablecer encuadre (100%)">
+          <span id="zoom-level-text">100%</span>
+        </button>
+        <button id="zoom-out-btn" class="zoom-btn" type="button" aria-label="Alejar mapa" title="Alejar mapa (-)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- INSTRUCCIÓN FLOTANTE DISCRETA EN LA PARTE SUPERIOR -->
+      <div id="draw-prompt" class="draw-prompt">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+          <path d="M2 2l7.586 7.586"></path>
+          <circle cx="11" cy="11" r="2"></circle>
+        </svg>
+        <span id="draw-prompt-text">Traza de memoria la ubicación, forma y extensión del Río Chiquito</span>
       </div>
     </main>
 
     <!-- BARRA INFERIOR DE ACCIONES -->
-    <footer id="bottom-strip">
-      <button id="borrar-btn" class="pill-btn ghost" type="button" disabled>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"></polyline>
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-        </svg>
-        <span>Borrar trazo</span>
-      </button>
-
-      <button id="ver-mapa-btn" class="pill-btn secondary" type="button" disabled>Ver mi croquis</button>
-
-      <button id="listo-btn" class="pill-btn primary" type="button" disabled>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
-          stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span>¡Listo!</span>
-      </button>
+    <footer id="bottom-cta">
+      <div class="cta-row">
+        <button id="listo-btn" class="pill-btn primary" type="button" disabled>Dibuja el trazo</button>
+      </div>
+      <div class="cta-row">
+        <button id="ver-mapa-btn" class="pill-btn secondary" type="button" disabled>Ver mi croquis completo</button>
+      </div>
     </footer>
+  </div>
 
-    <!-- FICHA FINAL COMPARTIBLE: FLIP CARD (TARJETA GIRATORIA) -->
-    <div id="final-sheet" class="final-sheet" hidden role="region" aria-label="Resultado final del croquis mental">
-      <div id="flip-card" class="flip-card">
-        <!-- FRENTE DE LA TARJETA (FICHA COMPLETA) -->
+  <!-- FICHA FINAL DE RESULTADOS (FLIP CARD) -->
+  <div id="final-sheet" hidden>
+    <div class="flip-card" id="flip-card">
+      <div class="flip-card-inner">
+        <!-- FRENTE DE LA TARJETA (COMPARTIBLE) -->
         <div class="flip-face flip-face-front">
-          <div class="share-card-container" id="share-card-container">
-            <!-- ENCABEZADO INSTITUCIONAL IMPLAN -->
+          <div class="share-card" id="share-card">
             <div class="share-card-header">
-              <div class="share-card-logos-row">
-                <img src="./static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="share-implan-logo" />
-                <span class="share-card-logo-sep" aria-hidden="true"></span>
-                <img src="./static/img/escudo_morelia_clean.png" alt="Morelia" class="share-escudo-logo" />
-                <span class="share-card-logo-sep" aria-hidden="true"></span>
-                <img src="./static/img/sigem_gris.png" alt="SIGEM" class="share-sigem-logo" />
+              <div class="share-card-brand-logos">
+                <img src="./img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="share-implan-logo" />
+                <span class="share-brand-sep" aria-hidden="true"></span>
+                <img src="./img/escudo_morelia_clean.png" alt="Morelia" class="share-escudo-logo" />
+                <span class="share-brand-sep" aria-hidden="true"></span>
+                <img src="./img/sigem_gris.png" alt="SIGEM" class="share-sigem-logo" />
+                
               </div>
               <div class="share-card-brand">
                 <span class="brand-title" id="share-card-title">Traza Morelia</span>
@@ -256,7 +311,7 @@
 
             <div class="share-card-footer">
               <div class="share-mobility-banner-wrap">
-                <img src="./static/img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="share-mobility-banner" />
+                <img src="./img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="share-mobility-banner" />
               </div>
               <span id="share-card-footer-text">IMPLAN Morelia · Instituto Municipal de Planeación ·
                 www.implanmorelia.org</span>
@@ -285,7 +340,7 @@
               </svg>
               <span>Guardar imagen</span>
             </button>
-            <button id="descargar-geojson-btn" class="pill-btn secondary" type="button"
+                        <button id="descargar-geojson-btn" class="pill-btn secondary" type="button"
               title="Descargar archivo vectorial GeoJSON del croquis">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -324,12 +379,14 @@
     <div class="modal-content welcome-modal-content">
       <div class="welcome-modal-banner">
         <div class="welcome-logos-row">
-          <img src="./static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="welcome-implan-logo" />
+          <img src="./img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="welcome-implan-logo" />
           <span class="welcome-logo-sep" aria-hidden="true"></span>
-          <img src="./static/img/escudo_morelia_clean.png" alt="H. Ayuntamiento de Morelia"
+          <img src="./img/escudo_morelia_clean.png" alt="H. Ayuntamiento de Morelia"
             class="welcome-escudo-logo" />
           <span class="welcome-logo-sep" aria-hidden="true"></span>
-          <img src="./static/img/sigem_gris.png" alt="SIGEM Morelia" class="welcome-sigem-logo" />
+          <img src="./img/sigem_gris.png" alt="SIGEM Morelia" class="welcome-sigem-logo" />
+          
+           el.style.display='none');" />
         </div>
       </div>
       <div class="modal-header">
@@ -387,12 +444,12 @@
         </button>
       </div>
       <div class="modal-bottom-mobility">
-        <img src="./static/img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="modal-mobility-banner" />
+        <img src="./img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="modal-mobility-banner" />
       </div>
     </div>
   </div>
 
-  <!-- MODAL ESTUDIO / EXPORTACIÓN QGIS (INDEXEDDB) -->
+    <!-- MODAL ESTUDIO / EXPORTACIÓN QGIS (INDEXEDDB) -->
   <div id="qgis-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="qgis-modal-title">
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content qgis-modal-content">
@@ -497,11 +554,11 @@
     </div>
   </div>
 
-  <script src="./static/vendor/d3.v7.min.js"></script>
-  <script src="./static/scoring.js"></script>
-  <script src="./data/morelia_data.js"></script>
-  <script src="./static/db.js"></script>
-  <script src="./static/app.js"></script>
+    <script src="./vendor/d3.v7.min.js"></script>
+  <script src="./scoring.js"></script>
+  <script src="../data/morelia_data.js"></script>
+  <script src="./db.js"></script>
+  <script src="./app.js"></script>
 </body>
 
 </html>
