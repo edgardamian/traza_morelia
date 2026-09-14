@@ -677,27 +677,38 @@
     anchorsToggle.disabled = true;
     updateBorrarState();
 
-    fetch("/api/score", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lineId: lid, points: pointsSnapshot })
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        state.drawnLines[lid] = pointsSnapshot;
-        state.perLineScores[lid] = data.score;
-        state.perLineTiers[lid] = data.tierTitle;
-        state.perLinePhrases[lid] = data.phrase;
-        saveRunState();
-        showReveal(data.score, data.truth, data.tierTitle, data.phrase);
+    const layer = layersMeta[lid];
+    const truthCoords = layer?.truthCoords || [];
+    const tol = layer?.toleranceScale || 500.0;
+
+    const finalizeScore = (data) => {
+      state.drawnLines[lid] = pointsSnapshot;
+      state.perLineScores[lid] = data.score;
+      state.perLineTiers[lid] = data.tierTitle;
+      state.perLinePhrases[lid] = data.phrase;
+      saveRunState();
+      showReveal(data.score, data.truth, data.tierTitle, data.phrase);
+    };
+
+    if (typeof MoreliaScoring !== "undefined") {
+      const data = MoreliaScoring.evaluateStroke(pointsSnapshot, truthCoords, tol);
+      finalizeScore(data);
+    } else {
+      fetch("/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lineId: lid, points: pointsSnapshot })
       })
-      .catch((err) => {
-        console.error("Error al calificar:", err);
-        revealActive = false;
-        anchorsToggle.disabled = false;
-        updateListoState();
-        updateBorrarState();
-      });
+        .then((r) => r.json())
+        .then(finalizeScore)
+        .catch((err) => {
+          console.error("Error al calificar:", err);
+          revealActive = false;
+          anchorsToggle.disabled = false;
+          updateListoState();
+          updateBorrarState();
+        });
+    }
   }
   listoBtn.addEventListener("click", onListo);
 
@@ -849,18 +860,39 @@
     if (state.sessionSaved) return;
     state.sessionSaved = true;
     saveRunState();
-    fetch("/api/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientId: getClientId(),
-        lines: state.drawnLines,
-        metadata: {
-          difficulty: state.difficulty,
-          playerName: state.playerName || ""
-        }
-      })
-    }).catch((e) => console.error("Error guardando sesión:", e));
+
+    const sessionPayload = {
+      clientId: getClientId(),
+      playerName: state.playerName || "anonimo",
+      difficulty: state.difficulty,
+      globalScore: computeGlobalScore(),
+      perLineScores: state.perLineScores,
+      lines: state.drawnLines,
+      timestamp: Date.now()
+    };
+
+    if (window.MoreliaDB) {
+      MoreliaDB.saveSession(sessionPayload, layersMeta)
+        .then(() => updateQgisBadge())
+        .catch((e) => console.error("Error guardando en IndexedDB:", e));
+    }
+
+    // Persistencia opcional solo si se corre en servidor de desarrollo local (localhost / 127.0.0.1)
+    const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    if (isLocalhost) {
+      fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: getClientId(),
+          lines: state.drawnLines,
+          metadata: {
+            difficulty: state.difficulty,
+            playerName: state.playerName || ""
+          }
+        })
+      }).catch(() => {});
+    }
   }
 
   function escapeHtml(str) {
@@ -905,16 +937,20 @@
       const globalScore = computeGlobalScore();
       globalScoreEl.textContent = String(globalScore);
 
-      // Obtener veredicto y frase directamente de MORELIA_TIER_PHRASES en scoring.py
-      fetch(`/api/verdict?score=${globalScore}`)
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.tier) shareVerdictEl.textContent = data.tier;
-          if (data.phrase) sharePhraseEl.textContent = `"${data.phrase}"`;
-        })
-        .catch((err) => {
-          console.warn("No se pudo obtener veredicto del backend:", err);
-        });
+      // Obtener veredicto y frase directamente de MoreliaScoring
+      if (typeof MoreliaScoring !== "undefined") {
+        const v = MoreliaScoring.pickPhraseAndTier(globalScore);
+        if (v.title) shareVerdictEl.textContent = v.title;
+        if (v.phrase) sharePhraseEl.textContent = `"${v.phrase}"`;
+      } else {
+        fetch(`/api/verdict?score=${globalScore}`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.tier) shareVerdictEl.textContent = data.tier;
+            if (data.phrase) sharePhraseEl.textContent = `"${data.phrase}"`;
+          })
+          .catch(() => {});
+      }
       renderShareMedallions();
       renderResultsTable();
     });
@@ -935,19 +971,16 @@
 
   // Imágenes de Identidad Oficial IMPLAN Morelia para el Canvas
   const brandImplanLogo = new Image();
-  brandImplanLogo.src = "/static/img/logo_implan_sin_slogan.png";
+  brandImplanLogo.src = "./static/img/logo_implan_sin_slogan.png";
 
   const brandEscudoLogo = new Image();
-  brandEscudoLogo.src = "/static/img/escudo_morelia_clean.png";
+  brandEscudoLogo.src = "./static/img/escudo_morelia_clean.png";
 
   const brandSigemLogo = new Image();
-  brandSigemLogo.src = "/static/img/sigem_gris.png";
-
-  const brandGeofestLogo = new Image();
-  brandGeofestLogo.src = "/static/img/geofest_logo.png";
+  brandSigemLogo.src = "./static/img/sigem_gris.png";
 
   const brandCenefaImg = new Image();
-  brandCenefaImg.src = "/static/img/cenefa_movilidad.png";
+  brandCenefaImg.src = "./static/img/cenefa_movilidad.png";
 
   function drawCanvasFbIcon(ctx, x, y, size) {
     ctx.save();
@@ -1498,6 +1531,78 @@
     }
   });
 
+  // Panel de Datos e Investigación QGIS (IndexedDB)
+  const qgisAdminBtn = document.getElementById("qgis-admin-btn");
+  const qgisCountBadge = document.getElementById("qgis-count-badge");
+  const qgisModal = document.getElementById("qgis-modal");
+  const qgisModalCount = document.getElementById("qgis-modal-count");
+  const exportarQgisBtn = document.getElementById("exportar-qgis-btn");
+  const exportarJsonBtn = document.getElementById("exportar-json-btn");
+  const limpiarQgisBtn = document.getElementById("limpiar-qgis-btn");
+  const descargarGeojsonBtn = document.getElementById("descargar-geojson-btn");
+
+  async function updateQgisBadge() {
+    if (!window.MoreliaDB) return;
+    try {
+      const count = await MoreliaDB.getSessionCount();
+      if (qgisCountBadge) qgisCountBadge.textContent = String(count);
+      if (qgisModalCount) qgisModalCount.textContent = String(count);
+    } catch (e) {
+      console.warn("No se pudo leer conteo de IndexedDB:", e);
+    }
+  }
+
+  function openQgisModal() {
+    if (!qgisModal) return;
+    updateQgisBadge();
+    qgisModal.hidden = false;
+    requestAnimationFrame(() => qgisModal.classList.add("visible"));
+  }
+
+  function closeQgisModal() {
+    if (!qgisModal) return;
+    qgisModal.classList.remove("visible");
+    setTimeout(() => { qgisModal.hidden = true; }, 240);
+  }
+
+  qgisAdminBtn?.addEventListener("click", openQgisModal);
+  qgisModal?.querySelector(".qgis-close-btn")?.addEventListener("click", closeQgisModal);
+  qgisModal?.querySelector(".modal-backdrop")?.addEventListener("click", closeQgisModal);
+
+  exportarQgisBtn?.addEventListener("click", async () => {
+    if (window.MoreliaDB) {
+      await MoreliaDB.exportConsolidatedGeoJSON();
+    }
+  });
+
+  exportarJsonBtn?.addEventListener("click", async () => {
+    if (window.MoreliaDB) {
+      await MoreliaDB.exportSessionsJSON();
+    }
+  });
+
+  limpiarQgisBtn?.addEventListener("click", async () => {
+    const ok = confirm("¿Estás seguro de vaciar la base de datos de croquis en este navegador? Asegúrate de haber descargado el archivo GeoJSON consolidado primero.");
+    if (ok && window.MoreliaDB) {
+      await MoreliaDB.clearAllSessions();
+      updateQgisBadge();
+      alert("Base de datos local vaciada con éxito.");
+    }
+  });
+
+  descargarGeojsonBtn?.addEventListener("click", () => {
+    if (!state || !state.drawnLines || !window.MoreliaDB) return;
+    const sessionData = {
+      playerName: state.playerName || "anonimo",
+      difficulty: state.difficulty,
+      globalScore: computeGlobalScore(),
+      perLineScores: state.perLineScores,
+      lines: state.drawnLines,
+      clientId: getClientId()
+    };
+    MoreliaDB.exportIndividualGeoJSON(sessionData, layersMeta);
+  });
+
   // Resize Handler
   let resizeTimer = null;
   window.addEventListener("resize", () => {
@@ -1524,11 +1629,48 @@
   // Bootstrap
   async function init() {
     try {
-      const [layers, anchors, valle] = await Promise.all([
-        fetch("/api/layers").then((r) => r.json()),
-        fetch("/api/anchors").then((r) => r.json()),
-        fetch("/api/valle").then((r) => r.json())
-      ]);
+      let layers = [];
+      let anchors = [];
+      let valle = null;
+
+      // 1. PRIORIDAD: Datos cartográficos precargados (Cero riesgo de 'Failed to fetch' en GitHub Pages o file://)
+      if (typeof window.MORELIA_DATA !== "undefined" && window.MORELIA_DATA.lineas) {
+        if (typeof MoreliaScoring !== "undefined") {
+          layers = MoreliaScoring.parseMoreliaLayers(window.MORELIA_DATA.lineas);
+          anchors = MoreliaScoring.parseMoreliaAnchors(window.MORELIA_DATA.anchors);
+        }
+        valle = window.MORELIA_DATA.valle;
+      } else {
+        // 2. Fallback mediante fetch con ruta relativa dinámica
+        try {
+          const basePath = window.location.pathname.endsWith('.html')
+            ? window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)
+            : window.location.pathname;
+          const cleanBase = basePath.endsWith('/') ? basePath : (basePath + '/');
+
+          const [layersGeo, anchorsGeo, valleData] = await Promise.all([
+            fetch(cleanBase + "data/lineas_morelia.geojson").then((r) => r.json()),
+            fetch(cleanBase + "data/morelia_anchors.geojson").then((r) => r.json()),
+            fetch(cleanBase + "data/cd_morelia_pol.geojson").then((r) => r.json()).catch(() => fetch(cleanBase + "data/morelia_valle.geojson").then((r) => r.json()))
+          ]);
+
+          if (typeof MoreliaScoring !== "undefined") {
+            layers = MoreliaScoring.parseMoreliaLayers(layersGeo);
+            anchors = MoreliaScoring.parseMoreliaAnchors(anchorsGeo);
+          }
+          valle = valleData;
+        } catch (fetchErr) {
+          console.warn("Fallo fetch relativo, intentando endpoints /api/...", fetchErr);
+          const [apiLayers, apiAnchors, apiValle] = await Promise.all([
+            fetch("/api/layers").then((r) => r.json()),
+            fetch("/api/anchors").then((r) => r.json()),
+            fetch("/api/valle").then((r) => r.json())
+          ]);
+          layers = apiLayers;
+          anchors = apiAnchors;
+          valle = apiValle;
+        }
+      }
 
       layersMeta = {};
       canonicalOrder = [];
@@ -1554,6 +1696,7 @@
           openAboutModal(true);
         }
       }
+      updateQgisBadge();
     } catch (e) {
       console.error("Error inicializando Croquis Morelia:", e);
     }

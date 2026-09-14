@@ -587,12 +587,15 @@ def get_stats():
     }
 
 
-# Servir Frontend
+# Servir Frontend y Datos Cartográficos Estáticos
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/data", StaticFiles(directory=DATA_DIR), name="data")
 
 @app.get("/")
 def serve_index():
-    index_path = os.path.join(STATIC_DIR, "index.html")
+    index_path = os.path.join(BASE_DIR, "index.html")
+    if not os.path.exists(index_path):
+        index_path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
     return JSONResponse({"status": "Mi Croquis Mental de Morelia Backend Active", "docs": "/docs"})
