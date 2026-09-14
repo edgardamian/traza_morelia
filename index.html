@@ -80,18 +80,8 @@
               <polyline points="3 3 3 8 8 8"></polyline>
             </svg>
           </button>
-          <button id="qgis-admin-btn" class="icon-btn" type="button" aria-label="Estudio y exportación a QGIS"
-            title="Datos del Estudio / Exportar a QGIS">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-              <polyline points="2 17 12 22 22 17"></polyline>
-              <polyline points="2 12 12 17 22 12"></polyline>
-            </svg>
-            <span id="qgis-count-badge">0</span>
-          </button>
-          <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto"
-            title="Información">
+          <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto y exportación"
+            title="Información y exportación de datos">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
@@ -428,6 +418,68 @@
           <span class="welcome-name-hint">Se incluirá como autor en tu croquis mental a la hora de la descarga.</span>
         </div>
 
+        <!-- EXPORTACIÓN DE DATOS A QGIS (INVESTIGACIÓN Y SIG) -->
+        <div class="about-qgis-section"
+          style="margin-top: 14px; padding: 14px; background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: var(--radius-md);">
+          <div
+            style="font-weight: 700; color: var(--implan-green); font-size: 0.92rem; display: flex; align-items: center; gap: 7px; margin-bottom: 6px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>Exportar datos a QGIS (Investigación SIG)</span>
+          </div>
+          <p style="font-size: 0.81rem; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.4;">
+            Descarga las sesiones y trazos registrados en este navegador para análisis espacial en QGIS o ArcGIS:
+          </p>
+
+          <div class="qgis-stats-box" style="margin: 6px 0 10px; padding: 10px 14px;">
+            <div class="qgis-stats-number" id="qgis-modal-count" style="font-size: 1.9rem;">0</div>
+            <div class="qgis-stats-label" style="font-size: 0.82rem;">
+              <strong>Croquis registrados en este equipo</strong><br>
+              Listos para análisis cartográfico en QGIS.
+            </div>
+          </div>
+
+          <div class="qgis-actions-list" style="gap: 8px; margin-top: 8px;">
+            <button id="exportar-qgis-btn" class="pill-btn primary" type="button"
+              style="padding: 10px 14px; font-size: 0.88rem; width: 100%; justify-content: center;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Descargar GeoJSON Consolidado (para QGIS)</span>
+            </button>
+            <button id="exportar-json-btn" class="pill-btn secondary" type="button"
+              style="padding: 8px 14px; font-size: 0.84rem; width: 100%; justify-content: center;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
+              <span>Descargar Copia de Seguridad (JSON)</span>
+            </button>
+            <button id="limpiar-qgis-btn" class="pill-btn ghost" type="button"
+              style="color: #c45b43; padding: 6px 12px; font-size: 0.78rem; width: 100%; justify-content: center;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Vaciar base de datos local</span>
+            </button>
+          </div>
+
+          <div class="qgis-qgis-hint" style="margin-top: 10px; font-size: 0.78rem; padding: 8px 12px;">
+            <strong>Tip SIG:</strong> Arrastra el archivo <code>.geojson</code> directamente al lienzo de
+            <strong>QGIS</strong> para visualizar todas las líneas trazadas, filtrar por participante o generar mapas de calor.
+          </div>
+        </div>
+
         <div class="about-contact-box">
           <span><strong>IMPLAN Morelia:</strong> Blvd. García de León 20-4, Col del Empleado · Tel. (443) 314 05 38 · <a
               href="https://www.implanmorelia.org" target="_blank" rel="noopener">www.implanmorelia.org</a></span>
@@ -445,91 +497,6 @@
       </div>
       <div class="modal-bottom-mobility">
         <img src="./static/img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="modal-mobility-banner" />
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL ESTUDIO / EXPORTACIÓN QGIS (INDEXEDDB) -->
-  <div id="qgis-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="qgis-modal-title">
-    <div class="modal-backdrop" aria-hidden="true"></div>
-    <div class="modal-content qgis-modal-content">
-      <div class="modal-header">
-        <div class="welcome-header-titles">
-          <span class="welcome-kicker">IMPLAN Morelia · Datos del Estudio</span>
-          <h3 id="qgis-modal-title">Memoria Espacial Colectiva</h3>
-        </div>
-        <button class="modal-close-btn qgis-close-btn" type="button" aria-label="Cerrar modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p>Los croquis trazados en este dispositivo se almacenan en la memoria local del navegador
-          (<strong>IndexedDB</strong>) de forma 100% offline.</p>
-
-        <div class="qgis-stats-box">
-          <div class="qgis-stats-number" id="qgis-modal-count">0</div>
-          <div class="qgis-stats-label">
-            <strong>Croquis registrados</strong><br>
-            Listos para análisis cartográfico en QGIS o ArcGIS.
-          </div>
-        </div>
-
-        <div class="qgis-actions-list">
-          <button id="exportar-qgis-btn" class="pill-btn primary" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            <span>Descargar GeoJSON Consolidado (para QGIS)</span>
-          </button>
-          <button id="exportar-json-btn" class="pill-btn secondary" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="16 18 22 12 16 6"></polyline>
-              <polyline points="8 6 2 12 8 18"></polyline>
-            </svg>
-            <span>Descargar Copia de Seguridad (JSON)</span>
-          </button>
-          <button id="limpiar-qgis-btn" class="pill-btn ghost" type="button" style="color: #c45b43;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-            <span>Vaciar base de datos local</span>
-          </button>
-        </div>
-
-        <div class="qgis-qgis-hint">
-          <strong>Tip SIG:</strong> Arrastra el archivo <code>.geojson</code> descargado directamente al lienzo de
-          <strong>QGIS</strong> para visualizar todas las líneas trazadas, filtrar por participante o generar mapas de
-          calor con las capas oficiales.
-        </div>
-
-        <!-- CONFIGURACIÓN DE SINCRONIZACIÓN EN LA NUBE (GOOGLE DRIVE & SHEETS) -->
-        <div class="qgis-webhook-section"
-          style="margin-top: 18px; padding: 14px; background: #edf3ea; border: 1px solid rgba(0, 131, 62, 0.2); border-radius: 12px;">
-          <div
-            style="font-weight: 700; color: #00833e; margin-bottom: 6px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
-            </svg>
-            <span>Sincronización en la Nube (Google Drive & Sheets)</span>
-          </div>
-          <p style="font-size: 0.8rem; color: #585d63; margin-bottom: 10px; line-height: 1.4;">
-            Pega aquí la URL de tu <strong>Google Apps Script Webhook</strong> para recibir automáticamente las sesiones
-            en Google Sheets y guardar los archivos GeoJSON en Google Drive:
-          </p>
-          <div style="display: flex; gap: 8px;">
-            <input type="url" id="webhook-url-input" placeholder="https://script.google.com/macros/s/.../exec"
-              style="flex: 1; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 8px; font-size: 0.82rem; font-family: monospace;" />
-            <button id="guardar-webhook-btn" class="pill-btn primary" type="button"
-              style="padding: 6px 14px; font-size: 0.82rem; white-space: nowrap;">Guardar</button>
-          </div>
-          <span id="webhook-status-msg"
-            style="font-size: 0.75rem; color: #00833e; margin-top: 6px; display: block;"></span>
-        </div>
       </div>
     </div>
   </div>

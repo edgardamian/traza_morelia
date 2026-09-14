@@ -1490,6 +1490,7 @@
 
   // Pantalla Previa de Bienvenida y Modal Acerca de
   function openAboutModal(isWelcome = false) {
+    updateQgisBadge();
     if (playerNameInput) {
       if (isWelcome) {
         playerNameInput.value = "";
@@ -1532,58 +1533,21 @@
   });
 
   // Panel de Datos e Investigación QGIS (IndexedDB)
-  const qgisAdminBtn = document.getElementById("qgis-admin-btn");
-  const qgisCountBadge = document.getElementById("qgis-count-badge");
-  const qgisModal = document.getElementById("qgis-modal");
   const qgisModalCount = document.getElementById("qgis-modal-count");
   const exportarQgisBtn = document.getElementById("exportar-qgis-btn");
   const exportarJsonBtn = document.getElementById("exportar-json-btn");
   const limpiarQgisBtn = document.getElementById("limpiar-qgis-btn");
   const descargarGeojsonBtn = document.getElementById("descargar-geojson-btn");
-  const webhookUrlInput = document.getElementById("webhook-url-input");
-  const guardarWebhookBtn = document.getElementById("guardar-webhook-btn");
-  const webhookStatusMsg = document.getElementById("webhook-status-msg");
 
   async function updateQgisBadge() {
     if (!window.MoreliaDB) return;
     try {
       const count = await MoreliaDB.getSessionCount();
-      if (qgisCountBadge) qgisCountBadge.textContent = String(count);
       if (qgisModalCount) qgisModalCount.textContent = String(count);
     } catch (e) {
       console.warn("No se pudo leer conteo de IndexedDB:", e);
     }
   }
-
-  function openQgisModal() {
-    if (!qgisModal) return;
-    updateQgisBadge();
-    if (webhookUrlInput && window.MoreliaDB) {
-      webhookUrlInput.value = MoreliaDB.getWebhookUrl() || "";
-    }
-    qgisModal.hidden = false;
-    requestAnimationFrame(() => qgisModal.classList.add("visible"));
-  }
-
-  function closeQgisModal() {
-    if (!qgisModal) return;
-    qgisModal.classList.remove("visible");
-    setTimeout(() => { qgisModal.hidden = true; }, 240);
-  }
-
-  qgisAdminBtn?.addEventListener("click", openQgisModal);
-  qgisModal?.querySelector(".qgis-close-btn")?.addEventListener("click", closeQgisModal);
-  qgisModal?.querySelector(".modal-backdrop")?.addEventListener("click", closeQgisModal);
-
-  guardarWebhookBtn?.addEventListener("click", () => {
-    if (!window.MoreliaDB || !webhookUrlInput) return;
-    const url = webhookUrlInput.value.trim();
-    MoreliaDB.setWebhookUrl(url);
-    if (webhookStatusMsg) {
-      webhookStatusMsg.textContent = url ? "✓ Webhook de Google guardado y listo" : "✓ Webhook desactivado";
-      setTimeout(() => { if (webhookStatusMsg) webhookStatusMsg.textContent = ""; }, 3500);
-    }
-  });
 
   exportarQgisBtn?.addEventListener("click", async () => {
     if (window.MoreliaDB) {
