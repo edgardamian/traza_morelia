@@ -119,53 +119,46 @@
 
       const nLower = name.toLowerCase();
       let category = String(props.category || props.CATEGORY || '').trim();
-      let kicker = String(props.kicker || props.KICKER || '').trim();
+      let kicker = String(
+        props.kicker || props.kiker ||
+        props.KICKER || props.KIKER ||
+        props.Kicker || props.Kiker || ''
+      ).trim();
       let color = String(props.color || props.COLOR || '').trim();
 
-      if (!category || !kicker || !color) {
+      if (!category || !color) {
         if (nLower.includes('chiquito')) {
           category = category || 'rio';
-          kicker = kicker || 'hidrografía · río sur';
           color = color || '#00acc1';
         } else if (nLower.includes('grande')) {
           category = category || 'rio';
-          kicker = kicker || 'hidrografía · río norte';
           color = color || '#1976d2';
         } else if (['río', 'rio', 'canal', 'arroyo'].some(w => nLower.includes(w))) {
           category = category || 'rio';
-          kicker = kicker || 'hidrografía · cauce fluvial';
           color = color || '#0288d1';
         } else if (['acueducto', 'tarasca', 'san diego', 'monumento', 'arcos'].some(w => nLower.includes(w))) {
           category = category || 'monumento';
-          kicker = kicker || 'monumento histórico · acueducto';
           color = color || '#fbc02d';
         } else if (['libramiento', 'periferico', 'periférico', 'circuito', 'anillo'].some(w => nLower.includes(w))) {
           category = category || 'periferico';
-          kicker = kicker || 'anillo vial · Paseo de la República';
           color = color || '#7c3aed';
         } else if (nLower.includes('madero')) {
           category = category || 'eje';
-          kicker = kicker || 'eje vial · Centro Histórico';
           color = color || '#f48fb1';
         } else if (nLower.includes('ventura')) {
           category = category || 'eje';
-          kicker = kicker || 'eje vial · Centro a Camelinas';
           color = color || '#ea580c';
         } else if (nLower.includes('huerta')) {
           category = category || 'eje';
-          kicker = kicker || 'eje vial · Salida a Pátzcuaro';
           color = color || '#2e7d32';
         } else if (nLower.includes('morelos')) {
           category = category || 'eje';
-          kicker = kicker || 'eje vial · Norte-Sur';
           color = color || '#e91e63';
         } else if (['calzada', 'andador', 'peatonal'].some(w => nLower.includes(w))) {
           category = category || 'andador';
-          kicker = kicker || 'andador urbano · Morelia';
           color = color || '#2e7d32';
         } else {
           category = category || 'eje';
-          kicker = kicker || 'eje cartográfico · Morelia';
           color = color || LAYER_PALETTE[idx % LAYER_PALETTE.length];
         }
       }
@@ -185,18 +178,8 @@
       }
 
       const articulated = articularNombre(name);
-      let hint = String(props.hint || props.HINT || '').trim();
-      if (!hint) {
-        if (nLower.includes('chiquito')) hint = 'A lo largo de Av. Solidaridad';
-        else if (nLower.includes('grande')) hint = 'Cruza el norte por Estadio Morelos';
-        else if (nLower.includes('acueducto')) hint = 'De Las Tarascas a Mil Cumbres';
-        else if (nLower.includes('libramiento')) hint = 'Circuito que rodea la ciudad';
-        else if (nLower.includes('madero')) hint = 'Cruza el Centro frente a Catedral';
-        else if (nLower.includes('huerta')) hint = 'Conecta con salida a Pátzcuaro';
-        else if (nLower.includes('morelos')) hint = 'Eje perpendicular junto a Catedral';
-        else if (nLower.includes('ventura')) hint = 'Del Acueducto a Av. Camelinas';
-        else hint = kicker ? kicker.slice(0, 32) : name;
-      }
+      // La pista es EXCLUSIVAMENTE el kicker/kiker definido en lineas_morelia.geojson sin sintetizar pistas inventadas
+      let hint = String(props.hint || props.HINT || kicker).trim();
 
       let prompt = String(props.prompt || props.PROMPT || '').trim();
       if (!prompt) prompt = `Traza de memoria la ubicación, forma y extensión ${articulated}`;
@@ -334,22 +317,27 @@
 
   const MORELIA_TIER_PHRASES = [
     {
+      level: 5,
       min: 85,
-      title: "Mapa Mental Moreliano",
+      title: "Nivel 5: GPS Moreliano",
+      sticker: "nivel5_gps_moreliano.png",
       phrases: [
+        "Tu trazo tiene brújula propia.",
         "Traes Morelia perfectamente trazada en la cabeza",
         "Traes el GPS implantado en el cerebro, ¡Taxista!",
         "Manejas el trazado de las calles como si tú hubieras construido media ciudad",
         "Parece que creciste nadando en el Río Chiquito",
         "Se ve que si le sabes Lusitoo!",
-        "Ese trazo trae brújula propia.",
         "Aquí hay talento cartográfico. El IMPLAN toma nota 👀"
       ]
     },
     {
+      level: 4,
       min: 75,
-      title: "Rutero Moreliano",
+      title: "Nivel 4: Conocimiento Moreliano",
+      sticker: "nivel4_conocimiento_moreliano.png",
       phrases: [
+        "Te ubicas muy bien, incluso sin ver un mapa.",
         "Te ubicas perfecto sin necesidad de abrir Google Maps",
         "Sabes llegar a cualquier lado guiándote por la cantera",
         "Conoces la ciudad de memoria con una que otra duda razonable",
@@ -359,9 +347,12 @@
       ]
     },
     {
+      level: 3,
       min: 50,
-      title: "Perdido en el bosque Cuauhtémoc",
+      title: "Nivel 3: Perdido en el bosque Cuauhtémoc",
+      sticker: "nivel3_perdido_en_el_bosque_cuahutemoc.png",
       phrases: [
+        "La intuición te ayudó, aunque algunos trazos improvisaron.",
         "Te ubicas en el Centro, pero te pierdes pasando el Libramiento",
         "Sabes llegar en Combi, pero no sabes cómo dibujarlo",
         "Casi le atinas, la cantera te guio a medias",
@@ -372,9 +363,12 @@
       ]
     },
     {
+      level: 2,
       min: 30,
-      title: "Recién llegado a Morelia",
+      title: "Nivel 2: Mood despistado",
+      sticker: "nivel2_mood_despistado.png",
       phrases: [
+        "Hay potencial cartográfico: solo falta afinar el trazo.",
         "Confundes Las Tarascas con el Obelisco a Lázaro Cárdenas",
         "Tu río se fue a desembocar hasta Pátzcuaro",
         "Mandaste el Acueducto rumbo a Altozano",
@@ -386,30 +380,60 @@
       ]
     },
     {
-      min: 15,
-      title: "Primer Paseo por Morelia",
+      level: 1,
+      min: 0,
+      title: "Nivel 1: Recién llegado a Morelia",
+      sticker: "nivel1_recien_llegado_a_morelia.png",
       phrases: [
+        "Tu Morelia sufrió una actualización inesperada.",
         "Para ti Morelia empieza y termina en los Portales",
         "¿Seguro que no estabas dibujando Uruapan?",
         "¿Venías manejando con los ojos cerrados o ibas esquivando marchas en la Madero?",
         "Pensaste que el Río Grande era una calle peatonal",
         "Puede que el río haya tomado vacaciones, pero el siguiente trazo puede salir mejor",
         "La ciudad sigue ahí. Ahora hay que encontrarla",
-        "Ni con Waze en la mano te salvas de esta, ¡vuelve a intentarlo!"
+        "Ni con Waze en la mano te salvas de esta, ¡vuelve a intentarlo!",
+        "¡Sigue paseando por Morelia es la única forma de conocerla!"
       ]
     }
   ];
 
+  function getStickerUrl(filename) {
+    if (!filename) return '';
+    if (filename.startsWith('http') || filename.startsWith('/') || filename.startsWith('./')) {
+      return filename;
+    }
+    const isStaticSubdir = (typeof window !== 'undefined' && window.location.pathname.includes('/static/')) ||
+      (typeof document !== 'undefined' && Boolean(document.querySelector('script[src*="./scoring.js"]')));
+    return (isStaticSubdir ? './img/stickers/' : './static/img/stickers/') + filename;
+  }
+
+  function getStickerByLevel(level) {
+    const tier = MORELIA_TIER_PHRASES.find(t => t.level === Number(level));
+    return tier ? tier.sticker : 'nivel1_recien_llegado_a_morelia.png';
+  }
+
   function pickPhraseAndTier(score) {
+    const s = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
     for (const tier of MORELIA_TIER_PHRASES) {
-      if (score >= tier.min) {
+      if (s >= tier.min) {
         const phrase = tier.phrases[Math.floor(Math.random() * tier.phrases.length)];
-        return { phrase, title: tier.title };
+        return {
+          phrase,
+          title: tier.title,
+          level: tier.level,
+          sticker: tier.sticker,
+          stickerUrl: getStickerUrl(tier.sticker)
+        };
       }
     }
+    const lastTier = MORELIA_TIER_PHRASES[MORELIA_TIER_PHRASES.length - 1];
     return {
-      phrase: "¡Sigue paseando por Morelia es la única forma de conocerla!",
-      title: "Turista primerizo"
+      phrase: lastTier.phrases[0],
+      title: lastTier.title,
+      level: lastTier.level,
+      sticker: lastTier.sticker,
+      stickerUrl: getStickerUrl(lastTier.sticker)
     };
   }
 
@@ -525,7 +549,7 @@
    */
   function evaluateStroke(drawnPoints, truthPoints, toleranceScale = 500.0) {
     if (!drawnPoints || drawnPoints.length < 2 || !truthPoints || truthPoints.length < 2) {
-      const { phrase, title } = pickPhraseAndTier(0);
+      const { phrase, title, level, sticker, stickerUrl } = pickPhraseAndTier(0);
       return {
         score: 0,
         scoreUbicacion: 0,
@@ -538,6 +562,9 @@
         lengthTruthMeters: 0.0,
         lengthRatio: 0.0,
         tierTitle: title,
+        tierLevel: level,
+        tierSticker: sticker,
+        stickerUrl: stickerUrl,
         phrase: phrase,
         truth: truthPoints || []
       };
@@ -701,7 +728,7 @@
     let finalScore = Math.round(scoreBase * factorCompletitud);
     finalScore = Math.max(0, Math.min(100, finalScore));
 
-    const { phrase, title } = pickPhraseAndTier(finalScore);
+    const { phrase, title, level, sticker, stickerUrl } = pickPhraseAndTier(finalScore);
 
     return {
       score: finalScore,
@@ -715,6 +742,9 @@
       lengthTruthMeters: Math.round(lenTruth * 10) / 10,
       lengthRatio: Math.round(ratioLargo * 100) / 100,
       tierTitle: title,
+      tierLevel: level,
+      tierSticker: sticker,
+      stickerUrl: stickerUrl,
       phrase: phrase,
       truth: truthPoints
     };
@@ -730,6 +760,8 @@
     parseMoreliaAnchors,
     slugify,
     articularNombre,
+    getStickerUrl,
+    getStickerByLevel,
     MORELIA_TIER_PHRASES
   };
 }));

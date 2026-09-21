@@ -24,6 +24,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def add_no_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    p = request.url.path
+    if p.endswith((".geojson", ".json", ".js", ".css", ".html")) or p in ["/", "/api/layers", "/api/anchors", "/api/valle", "/api/stats"]:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 SAVED_DIR = os.path.join(BASE_DIR, "saved_maps")
@@ -154,8 +164,51 @@ def clean_coords(raw_coords: Any) -> List[List[float]]:
     return cleaned
 
 
+def sync_embedded_morelia_data():
+    """Mantiene data/morelia_data.js permanentemente sincronizado con los geojson maestros."""
+    try:
+        lineas_path = os.path.join(DATA_DIR, "lineas_morelia.geojson")
+        anchors_path = os.path.join(DATA_DIR, "morelia_anchors.geojson")
+        valle_path = os.path.join(DATA_DIR, "cd_morelia_pol.geojson")
+        if not os.path.exists(valle_path):
+            valle_path = os.path.join(DATA_DIR, "morelia_valle.geojson")
+        out_js = os.path.join(DATA_DIR, "morelia_data.js")
+
+        if not os.path.exists(lineas_path):
+            return
+
+        lineas_mtime = os.path.getmtime(lineas_path)
+        js_mtime = os.path.getmtime(out_js) if os.path.exists(out_js) else 0
+        if js_mtime >= lineas_mtime and js_mtime > 0:
+            return
+
+        with open(lineas_path, "r", encoding="utf-8") as f:
+            lineas = json.load(f)
+        anchors = {}
+        if os.path.exists(anchors_path):
+            with open(anchors_path, "r", encoding="utf-8") as f:
+                anchors = json.load(f)
+        valle = {}
+        if os.path.exists(valle_path):
+            with open(valle_path, "r", encoding="utf-8") as f:
+                valle = json.load(f)
+
+        js_content = (
+            "/**\n"
+            " * DATOS CARTOGRÁFICOS DE MORELIA (EMBEDDED)\n"
+            " * Sincronizado automáticamente con lineas_morelia.geojson\n"
+            " */\n"
+            "window.MORELIA_DATA = " + json.dumps({"lineas": lineas, "anchors": anchors, "valle": valle}, ensure_ascii=False) + ";\n"
+        )
+        with open(out_js, "w", encoding="utf-8") as f:
+            f.write(js_content)
+    except Exception as e:
+        print("Aviso: No se pudo auto-sincronizar morelia_data.js:", e)
+
+
 def load_layers_data() -> List[Dict[str, Any]]:
     """Carga capas maestras desde data/lineas_morelia.geojson (o fallback a morelia_layers.geojson)."""
+    sync_embedded_morelia_data()
     # Prioridad: lineas_morelia.geojson -> morelia_layers.geojson
     geojson_path = os.path.join(DATA_DIR, "lineas_morelia.geojson")
     if not os.path.exists(geojson_path):
@@ -207,53 +260,46 @@ def load_layers_data() -> List[Dict[str, Any]]:
                 # 3. Categoría, Kicker y Color inteligente
                 n_lower = name.lower()
                 category = str(props.get("category") or props.get("CATEGORY") or "").strip()
-                kicker = str(props.get("kicker") or props.get("KICKER") or "").strip()
+                kicker = str(
+                    props.get("kicker") or props.get("kiker") or 
+                    props.get("KICKER") or props.get("KIKER") or 
+                    props.get("Kicker") or props.get("Kiker") or ""
+                ).strip()
                 color = str(props.get("color") or props.get("COLOR") or "").strip()
 
-                if not category or not kicker or not color:
+                if not category or not color:
                     if any(w in n_lower for w in ["chiquito"]):
                         category = category or "rio"
-                        kicker = kicker or "hidrografía · río sur"
                         color = color or "#00acc1"
                     elif any(w in n_lower for w in ["grande"]):
                         category = category or "rio"
-                        kicker = kicker or "hidrografía · río norte"
                         color = color or "#1976d2"
                     elif any(w in n_lower for w in ["río", "rio", "canal", "arroyo"]):
                         category = category or "rio"
-                        kicker = kicker or "hidrografía · cauce fluvial"
                         color = color or "#0288d1"
                     elif any(w in n_lower for w in ["acueducto", "tarasca", "san diego", "monumento", "arcos"]):
                         category = category or "monumento"
-                        kicker = kicker or "monumento histórico · acueducto"
                         color = color or "#fbc02d"
                     elif any(w in n_lower for w in ["libramiento", "periferico", "periférico", "circuito", "anillo"]):
                         category = category or "periferico"
-                        kicker = kicker or "anillo vial · Paseo de la República"
                         color = color or "#7c3aed"
                     elif any(w in n_lower for w in ["madero"]):
                         category = category or "eje"
-                        kicker = kicker or "eje vial · Centro Histórico"
                         color = color or "#f48fb1"
                     elif any(w in n_lower for w in ["ventura"]):
                         category = category or "eje"
-                        kicker = kicker or "eje vial · Centro a Camelinas"
                         color = color or "#ea580c"
                     elif any(w in n_lower for w in ["huerta"]):
                         category = category or "eje"
-                        kicker = kicker or "eje vial · Salida a Pátzcuaro"
                         color = color or "#2e7d32"
                     elif any(w in n_lower for w in ["morelos"]):
                         category = category or "eje"
-                        kicker = kicker or "eje vial · Norte-Sur"
                         color = color or "#e91e63"
                     elif any(w in n_lower for w in ["calzada", "andador", "peatonal"]):
                         category = category or "andador"
-                        kicker = kicker or "andador urbano · Morelia"
                         color = color or "#2e7d32"
                     else:
                         category = category or "eje"
-                        kicker = kicker or "eje cartográfico · Morelia"
                         color = color or LAYER_PALETTE[idx % len(LAYER_PALETTE)]
 
                 text_color = str(props.get("textColor") or props.get("TEXTCOLOR") or color)
@@ -272,28 +318,9 @@ def load_layers_data() -> List[Dict[str, Any]]:
                     else:
                         badge = layer_id[:3].upper()
 
-                # 5. Articulación gramatical y Pista corta (para el badge superior)
+                # 5. Articulación gramatical y Pista (estrictamente lo que el usuario define en kicker/kiker)
                 articulated = articular_nombre(name)
-                hint = str(props.get("hint") or props.get("HINT") or "").strip()
-                if not hint:
-                    if "chiquito" in n_lower:
-                        hint = "A lo largo de Av. Solidaridad"
-                    elif "grande" in n_lower:
-                        hint = "Cruza el norte por Estadio Morelos"
-                    elif "acueducto" in n_lower:
-                        hint = "De Las Tarascas a Mil Cumbres"
-                    elif "libramiento" in n_lower:
-                        hint = "Circuito que rodea la ciudad"
-                    elif "madero" in n_lower:
-                        hint = "Cruza el Centro frente a Catedral"
-                    elif "huerta" in n_lower:
-                        hint = "Conecta con salida a Pátzcuaro"
-                    elif "morelos" in n_lower:
-                        hint = "Eje perpendicular junto a Catedral"
-                    elif "ventura" in n_lower:
-                        hint = "Del Acueducto a Av. Camelinas"
-                    else:
-                        hint = kicker[:32] if kicker else name
+                hint = str(props.get("hint") or props.get("HINT") or kicker).strip()
 
                 # 6. Instrucción directa (prompt / letrero de misión) y descripción
                 prompt = str(props.get("prompt") or props.get("PROMPT") or "").strip()

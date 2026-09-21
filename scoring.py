@@ -76,22 +76,27 @@ def resample_polyline(coords: List[List[float]], num_points: int = 100) -> List[
 
 MORELIA_TIER_PHRASES = [
     {
+        "level": 5,
         "min": 85,
-        "title": "Mapa Mental Moreliano",
+        "title": "Nivel 5: GPS Moreliano",
+        "sticker": "nivel5_gps_moreliano.png",
         "phrases": [
+            "Tu trazo tiene brújula propia.",
             "Traes Morelia perfectamente trazada en la cabeza",            
             "Traes el GPS implantado en el cerebro, ¡Taxista!",
             "Manejas el trazado de las calles como si tú hubieras construido media ciudad",
             "Parece que creciste nadando en el Río Chiquito",
             "Se ve que si le sabes Lusitoo!",
-            "Ese trazo trae brújula propia.",
             "Aquí hay talento cartográfico. El IMPLAN toma nota 👀"
         ]
     },
     {
+        "level": 4,
         "min": 75,
-        "title": "Rutero Moreliano",
+        "title": "Nivel 4: Conocimiento Moreliano",
+        "sticker": "nivel4_conocimiento_moreliano.png",
         "phrases": [
+            "Te ubicas muy bien, incluso sin ver un mapa.",
             "Te ubicas perfecto sin necesidad de abrir Google Maps",
             "Sabes llegar a cualquier lado guiándote por la cantera",
             "Conoces la ciudad de memoria con una que otra duda razonable",
@@ -101,9 +106,12 @@ MORELIA_TIER_PHRASES = [
         ]
     },
     {
+        "level": 3,
         "min": 50,
-        "title": "Perdido en el bosque Cuauhtémoc",
+        "title": "Nivel 3: Perdido en el bosque Cuauhtémoc",
+        "sticker": "nivel3_perdido_en_el_bosque_cuahutemoc.png",
         "phrases": [
+            "La intuición te ayudó, aunque algunos trazos improvisaron.",
             "Te ubicas en el Centro, pero te pierdes pasando el Libramiento",
             "Sabes llegar en Combi, pero no sabes cómo dibujarlo",
             "Casi le atinas, la cantera te guio a medias",
@@ -114,9 +122,12 @@ MORELIA_TIER_PHRASES = [
         ]
     },
     {
+        "level": 2,
         "min": 30,
-        "title": "Recién llegado a Morelia",
+        "title": "Nivel 2: Mood despistado",
+        "sticker": "nivel2_mood_despistado.png",
         "phrases": [
+            "Hay potencial cartográfico: solo falta afinar el trazo.",
             "Confundes Las Tarascas con el Obelisco a Lázaro Cárdenas",
             "Tu río se fue a desembocar hasta Pátzcuaro",
             "Mandaste el Acueducto rumbo a Altozano",
@@ -128,27 +139,33 @@ MORELIA_TIER_PHRASES = [
         ]
     },
     {
-        "min": 15,
-        "title": "Primer Paseo por Morelia",
+        "level": 1,
+        "min": 0,
+        "title": "Nivel 1: Recién llegado a Morelia",
+        "sticker": "nivel1_recien_llegado_a_morelia.png",
         "phrases": [
+            "Tu Morelia sufrió una actualización inesperada.",
             "Para ti Morelia empieza y termina en los Portales",
             "¿Seguro que no estabas dibujando Uruapan?",
             "¿Venías manejando con los ojos cerrados o ibas esquivando marchas en la Madero?",
             "Pensaste que el Río Grande era una calle peatonal",
             "Puede que el río haya tomado vacaciones, pero el siguiente trazo puede salir mejor",
             "La ciudad sigue ahí. Ahora hay que encontrarla",
-            "Ni con Waze en la mano te salvas de esta, ¡vuelve a intentarlo!"
+            "Ni con Waze en la mano te salvas de esta, ¡vuelve a intentarlo!",
+            "¡Sigue paseando por Morelia es la única forma de conocerla!"
         ]
     }
 ]
 
-def pick_phrase_and_tier(score: int) -> Tuple[str, str]:
+def pick_phrase_and_tier(score: int) -> Tuple[str, str, int, str]:
     import random
+    s = max(0, min(100, int(score)))
     for tier in MORELIA_TIER_PHRASES:
-        if score >= tier["min"]:
+        if s >= tier["min"]:
             phrase = random.choice(tier["phrases"])
-            return phrase, tier["title"]
-    return "¡Sigue paseando por Morelia es la única forma de conocerla!", "Turista primeriso"
+            return phrase, tier["title"], tier["level"], tier["sticker"]
+    last = MORELIA_TIER_PHRASES[-1]
+    return last["phrases"][0], last["title"], last["level"], last["sticker"]
 
 def get_cumulative_distances(coords: List[List[float]]) -> List[float]:
     """Calcula la distancia acumulada en metros para cada vértice de una polilínea."""
@@ -242,13 +259,15 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
     - tolerance_scale: escala base de tolerancia en metros.
     """
     if len(drawn_points) < 2 or len(truth_points) < 2:
-        phrase, title = pick_phrase_and_tier(0)
+        phrase, title, level, sticker = pick_phrase_and_tier(0)
         return {
             "score": 0,
             "meanErrorMeters": 9999.0,
             "maxErrorMeters": 9999.0,
             "lengthRatio": 0.0,
             "tierTitle": title,
+            "tierLevel": level,
+            "tierSticker": sticker,
             "phrase": phrase,
             "truth": truth_points
         }
@@ -376,7 +395,7 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
     final_score = int(round(score_base * factor_completitud))
     final_score = max(0, min(100, final_score))
 
-    phrase, title = pick_phrase_and_tier(final_score)
+    phrase, title, level, sticker = pick_phrase_and_tier(final_score)
 
     return {
         "score": final_score,
@@ -390,6 +409,8 @@ def evaluate_stroke(drawn_points: List[List[float]], truth_points: List[List[flo
         "lengthTruthMeters": round(len_truth, 1),
         "lengthRatio": round(ratio_largo, 2),
         "tierTitle": title,
+        "tierLevel": level,
+        "tierSticker": sticker,
         "phrase": phrase,
         "truth": truth_points
     }

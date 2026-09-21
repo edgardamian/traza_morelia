@@ -67,6 +67,7 @@
       perLineScores: {},
       perLineTiers: {},
       perLinePhrases: {},
+      perLineStickers: {},
       difficulty,
       playerName: playerName || "",
       finished: false,
@@ -106,21 +107,45 @@
   const svg = document.getElementById("map");
   const mapWrap = document.getElementById("map-wrap");
   const lineMedallion = document.getElementById("line-medallion");
-  const lineKicker = document.getElementById("line-kicker");
   const pistaBtn = document.getElementById("pista-btn");
   const pistaBtnText = document.getElementById("pista-btn-text");
   const lineNameEl = document.getElementById("line-name");
 
+  const drawPrompt = document.getElementById("draw-prompt");
+  const drawPromptText = document.getElementById("draw-prompt-text");
+  const drawPromptHint = document.getElementById("draw-prompt-hint");
+  const drawPromptHintText = document.getElementById("draw-prompt-hint-text");
+
+  function getPistaText(meta) {
+    if (!meta) return "";
+    const raw = meta.kicker || meta.kiker || meta.Kicker || meta.KIKER || meta.hint || "";
+    return String(raw).trim();
+  }
+
   function setPistaVisible(visible) {
-    if (!lineKicker) return;
-    if (visible) {
-      lineKicker.removeAttribute("hidden");
+    const meta = currentLineMeta();
+    const hintStr = getPistaText(meta);
+
+    if (visible && hintStr) {
+      if (drawPromptHint && drawPromptHintText) {
+        drawPromptHintText.textContent = `Pista: ${hintStr}`;
+        drawPromptHint.removeAttribute("hidden");
+      }
+      if (drawPrompt) {
+        drawPrompt.classList.add("has-pista");
+        drawPrompt.classList.remove("hidden");
+      }
       pistaBtn?.classList.add("active");
       pistaBtn?.setAttribute("aria-expanded", "true");
       if (pistaBtnText) pistaBtnText.textContent = "Ocultar pista";
       if (pistaBtn) pistaBtn.title = "Ocultar pista geográfica";
     } else {
-      lineKicker.setAttribute("hidden", "");
+      if (drawPromptHint) {
+        drawPromptHint.setAttribute("hidden", "");
+      }
+      if (drawPrompt) {
+        drawPrompt.classList.remove("has-pista");
+      }
       pistaBtn?.classList.remove("active");
       pistaBtn?.setAttribute("aria-expanded", "false");
       if (pistaBtnText) pistaBtnText.textContent = "Pista";
@@ -130,7 +155,7 @@
 
   function togglePista() {
     if (isHardMode()) return;
-    const isHidden = lineKicker ? lineKicker.hasAttribute("hidden") : true;
+    const isHidden = drawPromptHint ? drawPromptHint.hasAttribute("hidden") : true;
     setPistaVisible(isHidden);
   }
 
@@ -143,8 +168,6 @@
   const listoBtn = document.getElementById("listo-btn");
   const verMapaBtn = document.getElementById("ver-mapa-btn");
   const aboutBtn = document.getElementById("about-btn");
-  const drawPrompt = document.getElementById("draw-prompt");
-  const drawPromptText = document.getElementById("draw-prompt-text");
 
   // Controles de Zoom
   const zoomControls = document.getElementById("zoom-controls");
@@ -161,6 +184,31 @@
   const revealNextBtn = document.getElementById("reveal-next");
   const revealToggleBtn = document.getElementById("reveal-toggle-btn");
   const revealDockHeader = document.getElementById("reveal-dock-header");
+
+  function resolveStickerUrl(stickerNameOrUrl) {
+    if (!stickerNameOrUrl) return "";
+    if (typeof MoreliaScoring !== "undefined" && typeof MoreliaScoring.getStickerUrl === "function") {
+      return MoreliaScoring.getStickerUrl(stickerNameOrUrl);
+    }
+    const isStaticSubdir = window.location.pathname.includes("/static/") || Boolean(document.querySelector('script[src*="./scoring.js"]'));
+    const base = isStaticSubdir ? "./img/stickers/" : "./static/img/stickers/";
+    return base + stickerNameOrUrl;
+  }
+
+  function setStickerImage(imgEl, stickerFilename, altText) {
+    if (!imgEl || !stickerFilename) return;
+    imgEl.alt = altText || "Sticker de calificación";
+    const primaryUrl = resolveStickerUrl(stickerFilename);
+    imgEl.src = primaryUrl;
+    imgEl.onerror = () => {
+      if (primaryUrl.includes("./static/img/stickers/")) {
+        imgEl.src = primaryUrl.replace("./static/img/stickers/", "./img/stickers/");
+      } else if (primaryUrl.includes("./img/stickers/")) {
+        imgEl.src = primaryUrl.replace("./img/stickers/", "./static/img/stickers/");
+      }
+      imgEl.onerror = null;
+    };
+  }
 
   revealBanner?.addEventListener("pointerdown", (e) => e.stopPropagation());
 
@@ -187,6 +235,7 @@
   const globalScoreEl = document.getElementById("global-score");
   const shareVerdictEl = document.getElementById("share-verdict");
   const sharePhraseEl = document.getElementById("share-phrase");
+  const shareStickerImg = document.getElementById("share-sticker-img");
   const shareHardSeal = document.getElementById("share-hard-seal");
   const shareMedallionsEl = document.getElementById("share-card-medallions");
   const resultsTableEl = document.getElementById("results-table");
@@ -196,6 +245,9 @@
   const flipToBackBtn = document.getElementById("flip-to-back-btn");
   const flipToFrontBtn = document.getElementById("flip-to-front-btn");
 
+  const welcomeModal = document.getElementById("welcome-modal");
+  const welcomeStartBtn = document.getElementById("welcome-start-btn");
+  const welcomeStartBtnText = document.getElementById("welcome-start-btn-text");
   const aboutModal = document.getElementById("about-modal");
   const playerNameInput = document.getElementById("player-name-input");
   const aboutStartBtn = document.getElementById("about-start-btn");
@@ -283,8 +335,9 @@
     if (zoomOutBtn) zoomOutBtn.disabled = currentZoom <= MIN_ZOOM + 0.05;
     if (zoomResetBtn) {
       const isDefault = Math.abs(currentZoom - 1.0) < 0.02 && Math.abs(panX) < 1 && Math.abs(panY) < 1;
-      zoomResetBtn.title = isDefault ? "Encuadre óptimo (100%)" : "Restablecer encuadre y centrado (100%)";
-      zoomResetBtn.style.color = isDefault ? "" : "var(--cantera-rosa)";
+      zoomResetBtn.title = isDefault ? "Centrar mapa (100%)" : "Centrar y restablecer encuadre (⟲ o tecla 0)";
+      zoomResetBtn.classList.toggle("is-off-center", !isDefault);
+      zoomResetBtn.style.color = "";
     }
   }
 
@@ -317,8 +370,14 @@
     }
   }, { passive: false });
 
-  // Atajos de teclado (+, -, 0, y Enter/Espacio para avanzar turno)
+  // Atajos de teclado (+, -, 0, Escape, y Enter/Espacio para avanzar turno)
   window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (aboutModal && !aboutModal.hidden) {
+        closeAboutModal();
+        return;
+      }
+    }
     if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
     if (revealActive && (e.key === "Enter" || e.key === " ")) {
       e.preventDefault();
@@ -513,7 +572,8 @@
         if (pistaBtnText) pistaBtnText.textContent = "Sin pistas";
         pistaBtn.title = "Pistas desactivadas en Modo Difícil";
       } else {
-        if (pistaBtnText && (!lineKicker || lineKicker.hasAttribute("hidden"))) {
+        const isHidden = drawPromptHint ? drawPromptHint.hasAttribute("hidden") : true;
+        if (pistaBtnText && isHidden) {
           pistaBtnText.textContent = "Pista";
         }
         pistaBtn.title = "Revelar pista geográfica";
@@ -837,7 +897,7 @@
     clearLayer(gUserdraw);
     startLineTurn();
     if (playerNameInput) playerNameInput.value = "";
-    openAboutModal(true);
+    openWelcomeModal();
   }
 
   function openConfirmResetModal() {
@@ -891,10 +951,11 @@
 
     lineMedallion.textContent = meta.badge || meta.id.slice(0, 3).toUpperCase();
     lineMedallion.style.setProperty("--line-color", meta.color);
-    lineKicker.textContent = meta.kicker || "Trazo de memoria";
+    const hintStr = getPistaText(meta);
+    if (drawPromptHintText) drawPromptHintText.textContent = `Pista: ${hintStr}`;
     setPistaVisible(false);
     if (pistaBtn) {
-      pistaBtn.style.display = meta.kicker ? "" : "none";
+      pistaBtn.style.display = hintStr ? "" : "none";
     }
     lineNameEl.textContent = meta.name;
 
@@ -921,7 +982,7 @@
     requestAnimationFrame(frame);
   }
 
-  function showReveal(score, truthCoords, tierTitle, phrase) {
+  function showReveal(score, truthCoords, tierTitle, phrase, tierSticker) {
     const meta = currentLineMeta();
     currentRevealTruth = { coords: truthCoords, color: meta.color };
     renderTruthReveal(truthCoords, meta.color);
@@ -929,6 +990,9 @@
     revealTierEl.textContent = tierTitle;
     revealScoreEl.textContent = "0";
     revealPhraseEl.textContent = `"${phrase}"`;
+
+
+
     document.body.classList.add("reveal-active");
     svg.style.cursor = "grab";
     revealBanner.classList.remove("is-minimized");
@@ -975,8 +1039,10 @@
       state.perLineScores[lid] = data.score;
       state.perLineTiers[lid] = data.tierTitle;
       state.perLinePhrases[lid] = data.phrase;
+      if (!state.perLineStickers) state.perLineStickers = {};
+      state.perLineStickers[lid] = data.tierSticker || "";
       saveRunState();
-      showReveal(data.score, data.truth, data.tierTitle, data.phrase);
+      showReveal(data.score, data.truth, data.tierTitle, data.phrase, data.tierSticker);
     };
 
     if (typeof MoreliaScoring !== "undefined") {
@@ -1231,17 +1297,26 @@
       const globalScore = computeGlobalScore();
       globalScoreEl.textContent = String(globalScore);
 
-      // Obtener veredicto y frase directamente de MoreliaScoring
+      // Obtener veredicto, frase y sticker directamente de MoreliaScoring
       if (typeof MoreliaScoring !== "undefined") {
         const v = MoreliaScoring.pickPhraseAndTier(globalScore);
         if (v.title) shareVerdictEl.textContent = v.title;
         if (v.phrase) sharePhraseEl.textContent = `"${v.phrase}"`;
+        if (shareStickerImg && v.sticker) {
+          setStickerImage(shareStickerImg, v.sticker, v.title);
+          shareStickerImg.classList.remove("pop");
+          void shareStickerImg.offsetWidth;
+          shareStickerImg.classList.add("pop");
+        }
       } else {
         fetch(`/api/verdict?score=${globalScore}`)
           .then((r) => r.json())
           .then((data) => {
             if (data.tier) shareVerdictEl.textContent = data.tier;
             if (data.phrase) sharePhraseEl.textContent = `"${data.phrase}"`;
+            if (shareStickerImg && data.sticker) {
+              setStickerImage(shareStickerImg, data.sticker, data.tier);
+            }
           })
           .catch(() => {});
       }
@@ -1275,6 +1350,31 @@
 
   const brandCenefaImg = new Image();
   brandCenefaImg.src = "./static/img/cenefa_movilidad.png";
+
+  // Stickers precargados para la Ficha HD Canvas
+  const STICKER_CANVAS_IMAGES = {
+    1: new Image(),
+    2: new Image(),
+    3: new Image(),
+    4: new Image(),
+    5: new Image()
+  };
+  const STICKER_FILENAMES = {
+    1: "nivel1_recien_llegado_a_morelia.png",
+    2: "nivel2_mood_despistado.png",
+    3: "nivel3_perdido_en_el_bosque_cuahutemoc.png",
+    4: "nivel4_conocimiento_moreliano.png",
+    5: "nivel5_gps_moreliano.png"
+  };
+  for (let lvl = 1; lvl <= 5; lvl++) {
+    const fn = STICKER_FILENAMES[lvl];
+    const sImg = STICKER_CANVAS_IMAGES[lvl];
+    sImg.src = resolveStickerUrl(fn);
+    sImg.onerror = () => {
+      sImg.src = sImg.src.includes("./static/") ? `./img/stickers/${fn}` : `./static/img/stickers/${fn}`;
+      sImg.onerror = null;
+    };
+  }
 
   function drawCanvasFbIcon(ctx, x, y, size) {
     ctx.save();
@@ -1586,139 +1686,137 @@
       ctx.restore();
     }
 
-    // Puntaje y Veredicto
-    const globalScore = computeGlobalScore();
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#34383c";
-    ctx.font = `800 128px ${FONT_FAMILY}`;
-    ctx.fillText(`${globalScore}`, SHARE_W / 2 - 45, 1276);
+    // Hero Card de Calificación Oficial (Sticker a la izquierda y Puntaje/Veredicto a la derecha)
+    const heroCardX = 60;
+    const heroCardY = 1205;
+    const heroCardW = SHARE_W - 120; // 1155px
+    const heroCardH = 300;
 
-    ctx.font = `600 48px ${FONT_FAMILY}`;
-    ctx.fillStyle = "rgba(75, 79, 84, 0.45)";
-    ctx.fillText("/100", SHARE_W / 2 + 90, 1276);
-
-    ctx.font = `800 42px ${FONT_FAMILY}`;
-    ctx.fillStyle = "#00833e";
-    ctx.fillText(shareVerdictEl.textContent, SHARE_W / 2, 1338);
-
-    ctx.font = `italic 500 24px ${FONT_FAMILY}`;
-    ctx.fillStyle = "rgba(75, 79, 84, 0.78)";
-    ctx.fillText(sharePhraseEl.textContent, SHARE_W / 2, 1380);
-
-    // Llamado a redes sociales (dinámico desde el DOM para reflejar de inmediato cualquier cambio en HTML)
-    const shareSocialTextEl = document.querySelector(".share-social-text");
-    const rawSocialText = shareSocialTextEl
-      ? shareSocialTextEl.textContent.replace(/\s+/g, " ").trim()
-      : "Tómale una foto a tu marcador, etiquétanos en tus redes sociales y compartimos tu foto, la foto con más likes se llevará una sorpresa a fin de mes.";
-
-    const maxSocialWidth = SHARE_W - 140;
-    ctx.textAlign = "center";
-    let calloutFontSize = 21;
-
-    function getCanvasWrappedLines(text, fontPx) {
-      ctx.font = `600 ${fontPx}px ${FONT_FAMILY}`;
-      const words = text.split(/\s+/);
-      const lines = [];
-      let curLine = words[0] || "";
-      for (let i = 1; i < words.length; i++) {
-        const test = curLine + " " + words[i];
-        if (ctx.measureText(test).width <= maxSocialWidth) {
-          curLine = test;
-        } else {
-          lines.push(curLine);
-          curLine = words[i];
-        }
-      }
-      if (curLine) lines.push(curLine);
-      return lines;
-    }
-
-    let socialLines = getCanvasWrappedLines(rawSocialText, calloutFontSize);
-    while (socialLines.length > 2 && calloutFontSize > 15) {
-      calloutFontSize -= 1;
-      socialLines = getCanvasWrappedLines(rawSocialText, calloutFontSize);
-    }
-
-    ctx.font = `600 ${calloutFontSize}px ${FONT_FAMILY}`;
-    ctx.fillStyle = "#34383c";
-
-    let socialPillY = 1444;
-    let cenefaY = 1506;
-    let cenefaH = 26;
-
-    if (socialLines.length <= 1) {
-      ctx.fillText(socialLines[0] || rawSocialText, SHARE_W / 2, 1424);
-      socialPillY = 1444;
-      cenefaY = 1506;
-    } else {
-      ctx.fillText(socialLines[0], SHARE_W / 2, 1412);
-      ctx.fillText(socialLines[1], SHARE_W / 2, 1438);
-      socialPillY = 1456;
-      cenefaY = 1512;
-      cenefaH = 24;
-    }
-
-    // Identificadores de Redes Sociales (dinámicos desde el DOM o valores predeterminados)
-    const socialTagEls = document.querySelectorAll(".share-social-tags .social-tag");
-    let fbUser = "IMPLANmorelia";
-    let igUser = "implan_morelia";
-    if (socialTagEls.length >= 2) {
-      const t0 = socialTagEls[0].textContent.trim();
-      const t1 = socialTagEls[1].textContent.trim();
-      if (t0) fbUser = t0;
-      if (t1) igUser = t1;
-    }
-
-    const iconSize = 28;
-    const gapIconText = 10;
-    const sepGap = 22;
-
-    ctx.font = `700 23px ${FONT_FAMILY}`;
-    const fbW = ctx.measureText(fbUser).width;
-    const igW = ctx.measureText(igUser).width;
-    const sepW = ctx.measureText("·").width;
-
-    const totalContentW = iconSize + gapIconText + fbW + sepGap + sepW + sepGap + iconSize + gapIconText + igW;
-    const pillPadX = 30, pillH = socialLines.length > 1 ? 40 : 44;
-    const pillW = totalContentW + pillPadX * 2;
-    const pillX = (SHARE_W - pillW) / 2;
-    const pillY = socialPillY;
-
-    ctx.fillStyle = "rgba(0, 131, 62, 0.07)";
-    ctx.strokeStyle = "rgba(0, 131, 62, 0.30)";
-    ctx.lineWidth = 1.5;
+    // Fondo y contorno del Hero Card
+    ctx.save();
+    ctx.fillStyle = hard ? "rgba(255, 253, 248, 0.96)" : "rgba(255, 255, 255, 0.98)";
+    ctx.strokeStyle = "rgba(0, 131, 62, 0.28)";
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+    ctx.roundRect(heroCardX, heroCardY, heroCardW, heroCardH, 22);
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
 
-    let curX = pillX + pillPadX;
-    const iconY = pillY + (pillH - iconSize) / 2;
-    const textBaselineY = pillY + (socialLines.length > 1 ? 28 : 30);
+    // Información de nivel y sticker
+    const globalScore = computeGlobalScore();
+    const tierInfo = typeof MoreliaScoring !== "undefined" ? MoreliaScoring.pickPhraseAndTier(globalScore) : null;
+    const tierLevel = tierInfo?.level || (globalScore >= 85 ? 5 : globalScore >= 75 ? 4 : globalScore >= 50 ? 3 : globalScore >= 30 ? 2 : 1);
+    const canvasSticker = STICKER_CANVAS_IMAGES[tierLevel];
 
-    // Logo e Identificador de Facebook
-    drawCanvasFbIcon(ctx, curX, iconY, iconSize);
-    curX += iconSize + gapIconText;
+    // Textos de calificación
+    const verdictText = (shareVerdictEl?.textContent || tierInfo?.title || `Nivel ${tierLevel}`).trim();
+    const rawPhrase = (sharePhraseEl?.textContent || tierInfo?.phrase || "").trim();
+    const phraseText = rawPhrase.startsWith('"') ? rawPhrase : `"${rawPhrase}"`;
 
+    // Medición del ancho de cada elemento para centrar armónicamente el grupo de Sticker + Calificación
+    const stSize = 250;
+    const clusterGap = 48;
+
+    // 1. Medir línea de puntaje
+    ctx.font = `800 120px ${FONT_FAMILY}`;
+    const scoreNumW = ctx.measureText(`${globalScore}`).width;
+
+    ctx.font = `700 46px ${FONT_FAMILY}`;
+    const denW = ctx.measureText("/100").width;
+    const scoreLineWidth = scoreNumW + 12 + denW;
+
+    // 2. Medir veredicto
+    let verdictFontSize = 38;
+    ctx.font = `800 ${verdictFontSize}px ${FONT_FAMILY}`;
+    let verdictW = ctx.measureText(verdictText).width;
+    const maxAllowedTextW = 600;
+    while (verdictW > maxAllowedTextW && verdictFontSize > 22) {
+      verdictFontSize -= 2;
+      ctx.font = `800 ${verdictFontSize}px ${FONT_FAMILY}`;
+      verdictW = ctx.measureText(verdictText).width;
+    }
+
+    // 3. Medir y particionar frase si fuera extensa
+    let phraseFontSize = 23;
+    ctx.font = `italic 500 ${phraseFontSize}px ${FONT_FAMILY}`;
+    let phraseW = ctx.measureText(phraseText).width;
+    let phraseLines = [phraseText];
+    if (phraseW > maxAllowedTextW) {
+      const words = phraseText.split(/\s+/);
+      let line1 = words[0] || "";
+      let idx = 1;
+      for (; idx < words.length; idx++) {
+        const test = line1 + " " + words[idx];
+        if (ctx.measureText(test).width <= maxAllowedTextW) {
+          line1 = test;
+        } else {
+          break;
+        }
+      }
+      const line2 = words.slice(idx).join(" ");
+      phraseLines = line2 ? [line1, line2] : [line1];
+      phraseW = Math.max(ctx.measureText(phraseLines[0]).width, phraseLines[1] ? ctx.measureText(phraseLines[1]).width : 0);
+    }
+
+    // Ancho del bloque derecho de información
+    const rightBlockW = Math.max(scoreLineWidth, verdictW, phraseW);
+
+    // Ancho total del grupo unificado (Sticker + Espacio + Bloque de Calificación)
+    const totalClusterW = stSize + clusterGap + rightBlockW;
+
+    // Centrado horizontal exacto dentro de la tarjeta
+    const clusterStartX = Math.round(heroCardX + (heroCardW - totalClusterW) / 2);
+    const stCenterX = clusterStartX + stSize / 2;
+    const stCenterY = Math.round(heroCardY + heroCardH / 2); // 1355px
+    const textStartX = clusterStartX + stSize + clusterGap;
+
+    // 1. Dibujar Sticker Oficial centrado
+    if (canvasSticker && canvasSticker.complete && canvasSticker.naturalWidth) {
+      ctx.save();
+      ctx.translate(stCenterX, stCenterY);
+      ctx.rotate(-2.5 * Math.PI / 180);
+      ctx.shadowColor = "rgba(0, 0, 0, 0.22)";
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 10;
+      ctx.drawImage(canvasSticker, -stSize / 2, -stSize / 2, stSize, stSize);
+      ctx.restore();
+    }
+
+    // 2. Dibujar Bloque de Calificación al mismo nivel vertical
     ctx.textAlign = "left";
-    ctx.fillStyle = "#34383c";
-    ctx.fillText(fbUser, curX, textBaselineY);
-    curX += fbW + sepGap;
+    ctx.textBaseline = "alphabetic";
 
-    // Separador
+    const hasTwoPhraseLines = phraseLines.length > 1;
+    const scoreBaseY = hasTwoPhraseLines ? 1318 : 1330;
+    const verdictBaseY = hasTwoPhraseLines ? 1368 : 1380;
+    const phraseBaseY = hasTwoPhraseLines ? 1410 : 1424;
+
+    // Puntaje numérico y denominador /100
+    ctx.fillStyle = "#34383c";
+    ctx.font = `800 120px ${FONT_FAMILY}`;
+    ctx.fillText(`${globalScore}`, textStartX, scoreBaseY);
+
+    ctx.font = `700 46px ${FONT_FAMILY}`;
     ctx.fillStyle = "rgba(75, 79, 84, 0.45)";
-    ctx.fillText("·", curX, textBaselineY);
-    curX += sepW + sepGap;
+    ctx.fillText("/100", textStartX + scoreNumW + 12, scoreBaseY);
 
-    // Logo e Identificador de Instagram
-    drawCanvasIgIcon(ctx, curX, iconY, iconSize);
-    curX += iconSize + gapIconText;
+    // Veredicto del nivel
+    ctx.fillStyle = "#00833e";
+    ctx.font = `800 ${verdictFontSize}px ${FONT_FAMILY}`;
+    ctx.fillText(verdictText, textStartX, verdictBaseY);
 
-    ctx.fillStyle = "#34383c";
-    ctx.fillText(igUser, curX, textBaselineY);
-    ctx.textAlign = "center";
+    // Frase evaluativa personalizada
+    ctx.fillStyle = "rgba(75, 79, 84, 0.85)";
+    ctx.font = `italic 500 ${phraseFontSize}px ${FONT_FAMILY}`;
+    ctx.fillText(phraseLines[0], textStartX, phraseBaseY);
+    if (hasTwoPhraseLines) {
+      ctx.fillText(phraseLines[1], textStartX, phraseBaseY + 32);
+    }
 
     // Cenefa institucional de movilidad sustentable
+    const cenefaY = 1530;
+    const cenefaH = 26;
     if (brandCenefaImg.complete && brandCenefaImg.naturalWidth) {
       ctx.drawImage(brandCenefaImg, 50, cenefaY, SHARE_W - 100, cenefaH);
     }
@@ -1726,10 +1824,11 @@
     // Pie de página institucional
     ctx.font = `600 21px ${FONT_FAMILY}`;
     ctx.fillStyle = "rgba(75, 79, 84, 0.70)";
+    ctx.textAlign = "center";
     const footerText = pName
       ? `Participante: ${pName} · IMPLAN Morelia · www.implanmorelia.org`
       : "IMPLAN Morelia · Instituto Municipal de Planeación · www.implanmorelia.org";
-    ctx.fillText(footerText, SHARE_W / 2, 1572);
+    ctx.fillText(footerText, SHARE_W / 2, 1588);
   }
 
   async function exportCanvasBlob() {
@@ -1782,47 +1881,145 @@
     }
   });
 
-  // Pantalla Previa de Bienvenida y Modal Acerca de
-  function openAboutModal(isWelcome = false) {
-    updateQgisBadge();
+  // Pantalla Previa de Bienvenida (Captura de Nombre Inicial)
+  function updateNameValidation() {
+    const val = playerNameInput ? playerNameInput.value.trim() : "";
+    const nameGroup = document.getElementById("welcome-name-group");
+    const nameHint = document.getElementById("welcome-name-hint");
+
+    if (val.length > 0) {
+      nameGroup?.classList.remove("has-error");
+      if (nameHint) {
+        nameHint.textContent = "Se incluirá como autor en tu croquis mental a la hora de la descarga.";
+        nameHint.classList.remove("has-error");
+      }
+      if (welcomeStartBtn) {
+        welcomeStartBtn.disabled = false;
+        if (welcomeStartBtnText) {
+          welcomeStartBtnText.textContent = "¡Comenzar a dibujar!";
+        }
+      }
+    } else {
+      if (welcomeStartBtn) {
+        welcomeStartBtn.disabled = true;
+        if (welcomeStartBtnText) {
+          welcomeStartBtnText.textContent = "Ingresa tu nombre para comenzar";
+        }
+      }
+    }
+  }
+
+  function openWelcomeModal() {
     if (playerNameInput) {
-      if (isWelcome) {
-        playerNameInput.value = "";
-        if (state) state.playerName = "";
-      } else {
-        playerNameInput.value = (state && state.playerName) || "";
-      }
+      playerNameInput.value = (state && state.playerName) || "";
     }
-    if (aboutStartBtnText) {
-      aboutStartBtnText.textContent = isWelcome ? "¡Comenzar a dibujar!" : "Continuar dibujando";
+    updateNameValidation();
+    if (welcomeModal) {
+      welcomeModal.hidden = false;
+      requestAnimationFrame(() => {
+        welcomeModal.classList.add("visible");
+        if (playerNameInput) {
+          setTimeout(() => playerNameInput.focus(), 120);
+        }
+      });
     }
-    aboutModal.hidden = false;
-    requestAnimationFrame(() => {
-      aboutModal.classList.add("visible");
-      if (isWelcome && playerNameInput) {
-        setTimeout(() => playerNameInput.focus(), 120);
+  }
+
+  function tryCloseWelcomeModal() {
+    const nameGroup = document.getElementById("welcome-name-group");
+    const nameHint = document.getElementById("welcome-name-hint");
+    const val = playerNameInput ? playerNameInput.value.trim() : "";
+
+    if (!val) {
+      nameGroup?.classList.add("has-error");
+      if (nameHint) {
+        nameHint.textContent = "⚠️ Por favor ingresa tu nombre o apodo para comenzar.";
+        nameHint.classList.add("has-error");
       }
+      playerNameInput?.focus();
+      return false;
+    }
+
+    if (state) state.playerName = val;
+    saveRunState();
+
+    if (welcomeModal) {
+      welcomeModal.classList.remove("visible");
+      setTimeout(() => { welcomeModal.hidden = true; }, 240);
+    }
+    return true;
+  }
+
+  // Modal de Información e Instrucciones (Botón (i) en la barra superior)
+  function initInstructionTabs() {
+    if (aboutModal?._tabsInitialized) return;
+    const tabBtns = aboutModal?.querySelectorAll(".instruction-tab-btn");
+    const panels = aboutModal?.querySelectorAll(".instruction-panel");
+    if (!tabBtns || !panels) return;
+    aboutModal._tabsInitialized = true;
+
+    tabBtns.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const targetId = btn.getAttribute("data-tab-target");
+        tabBtns.forEach((b) => {
+          const isActive = b === btn;
+          b.classList.toggle("active", isActive);
+          b.setAttribute("aria-selected", String(isActive));
+        });
+        panels.forEach((p) => {
+          const isActive = p.id === targetId;
+          p.classList.toggle("active", isActive);
+          p.hidden = !isActive;
+        });
+      });
     });
   }
 
-  function closeAboutModal() {
-    if (playerNameInput) {
-      const raw = playerNameInput.value.trim();
-      if (state) state.playerName = raw;
-      saveRunState();
+  function openAboutModal() {
+    initInstructionTabs();
+    updateQgisBadge();
+    if (aboutModal) {
+      aboutModal.hidden = false;
+      requestAnimationFrame(() => {
+        aboutModal.classList.add("visible");
+      });
     }
-    aboutModal.classList.remove("visible");
-    setTimeout(() => { aboutModal.hidden = true; }, 240);
   }
 
-  aboutBtn?.addEventListener("click", () => openAboutModal(false));
+  function closeAboutModal() {
+    if (aboutModal) {
+      aboutModal.classList.remove("visible");
+      setTimeout(() => { aboutModal.hidden = true; }, 240);
+    }
+  }
+
+  aboutBtn?.addEventListener("click", openAboutModal);
   aboutModal?.querySelector(".about-close-btn")?.addEventListener("click", closeAboutModal);
   aboutModal?.querySelector(".modal-backdrop")?.addEventListener("click", closeAboutModal);
   aboutStartBtn?.addEventListener("click", closeAboutModal);
+
+  welcomeStartBtn?.addEventListener("click", () => tryCloseWelcomeModal());
+  welcomeModal?.querySelector(".modal-backdrop")?.addEventListener("click", () => {
+    if (!state?.playerName) {
+      const nameGroup = document.getElementById("welcome-name-group");
+      const nameHint = document.getElementById("welcome-name-hint");
+      nameGroup?.classList.add("has-error");
+      if (nameHint) {
+        nameHint.textContent = "⚠️ Por favor ingresa tu nombre o apodo para comenzar.";
+        nameHint.classList.add("has-error");
+      }
+      playerNameInput?.focus();
+    } else {
+      tryCloseWelcomeModal();
+    }
+  });
+
+  playerNameInput?.addEventListener("input", updateNameValidation);
   playerNameInput?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      closeAboutModal();
+      tryCloseWelcomeModal();
     }
   });
 
@@ -1898,43 +2095,59 @@
       let anchors = [];
       let valle = null;
 
-      // 1. PRIORIDAD: Datos cartográficos precargados (Cero riesgo de 'Failed to fetch' en GitHub Pages o file://)
-      if (typeof window.MORELIA_DATA !== "undefined" && window.MORELIA_DATA.lineas) {
-        if (typeof MoreliaScoring !== "undefined") {
-          layers = MoreliaScoring.parseMoreliaLayers(window.MORELIA_DATA.lineas);
-          anchors = MoreliaScoring.parseMoreliaAnchors(window.MORELIA_DATA.anchors);
-        }
-        valle = window.MORELIA_DATA.valle;
-      } else {
-        // 2. Fallback mediante fetch con ruta relativa dinámica
+      // 1. PRIORIDAD EN SERVIDOR (HTTP/HTTPS): Cargar directamente data/lineas_morelia.geojson sin caché para reflejar cambios en tiempo real
+      let loadedLive = false;
+      if (window.location.protocol.startsWith("http")) {
         try {
           const basePath = window.location.pathname.endsWith('.html')
             ? window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)
             : window.location.pathname;
           const cleanBase = basePath.endsWith('/') ? basePath : (basePath + '/');
+          const cacheBust = `?t=${Date.now()}`;
 
           const [layersGeo, anchorsGeo, valleData] = await Promise.all([
-            fetch(cleanBase + "data/lineas_morelia.geojson").then((r) => r.json()),
-            fetch(cleanBase + "data/morelia_anchors.geojson").then((r) => r.json()),
-            fetch(cleanBase + "data/cd_morelia_pol.geojson").then((r) => r.json()).catch(() => fetch(cleanBase + "data/morelia_valle.geojson").then((r) => r.json()))
+            fetch(cleanBase + "data/lineas_morelia.geojson" + cacheBust, { cache: "no-store" }).then(r => {
+              if (!r.ok) throw new Error("Status " + r.status);
+              return r.json();
+            }),
+            fetch(cleanBase + "data/morelia_anchors.geojson" + cacheBust, { cache: "no-store" }).then(r => r.json()).catch(() => null),
+            fetch(cleanBase + "data/cd_morelia_pol.geojson" + cacheBust, { cache: "no-store" })
+              .then(r => r.json())
+              .catch(() => fetch(cleanBase + "data/morelia_valle.geojson" + cacheBust, { cache: "no-store" }).then(r => r.json()))
+              .catch(() => null)
           ]);
 
-          if (typeof MoreliaScoring !== "undefined") {
+          if (layersGeo && typeof MoreliaScoring !== "undefined") {
             layers = MoreliaScoring.parseMoreliaLayers(layersGeo);
-            anchors = MoreliaScoring.parseMoreliaAnchors(anchorsGeo);
+            if (anchorsGeo) anchors = MoreliaScoring.parseMoreliaAnchors(anchorsGeo);
+            valle = valleData;
+            loadedLive = true;
           }
-          valle = valleData;
         } catch (fetchErr) {
-          console.warn("Fallo fetch relativo, intentando endpoints /api/...", fetchErr);
-          const [apiLayers, apiAnchors, apiValle] = await Promise.all([
-            fetch("/api/layers").then((r) => r.json()),
-            fetch("/api/anchors").then((r) => r.json()),
-            fetch("/api/valle").then((r) => r.json())
-          ]);
-          layers = apiLayers;
-          anchors = apiAnchors;
-          valle = apiValle;
+          // Intentar API backend FastAPI /api/layers
+          try {
+            const [apiLayers, apiAnchors, apiValle] = await Promise.all([
+              fetch("/api/layers?t=" + Date.now()).then(r => r.json()),
+              fetch("/api/anchors?t=" + Date.now()).then(r => r.json()).catch(() => []),
+              fetch("/api/valle?t=" + Date.now()).then(r => r.json()).catch(() => null)
+            ]);
+            if (apiLayers && apiLayers.length > 0) {
+              layers = apiLayers;
+              anchors = apiAnchors || [];
+              valle = apiValle;
+              loadedLive = true;
+            }
+          } catch (_) {}
         }
+      }
+
+      // 2. Fallback offline o protocolo file://
+      if (!loadedLive && typeof window.MORELIA_DATA !== "undefined" && window.MORELIA_DATA.lineas) {
+        if (typeof MoreliaScoring !== "undefined") {
+          layers = MoreliaScoring.parseMoreliaLayers(window.MORELIA_DATA.lineas);
+          anchors = MoreliaScoring.parseMoreliaAnchors(window.MORELIA_DATA.anchors);
+        }
+        valle = window.MORELIA_DATA.valle;
       }
 
       layersMeta = {};
@@ -1953,12 +2166,13 @@
         state = freshRunState();
       }
 
+      initInstructionTabs();
       if (state.finished) {
         showFinalSheet();
       } else {
         startLineTurn();
-        if (drawnCount() === 0) {
-          openAboutModal(true);
+        if (drawnCount() === 0 || !state.playerName) {
+          openWelcomeModal();
         }
       }
       updateQgisBadge();

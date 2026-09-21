@@ -42,7 +42,8 @@ El motor espacial (`scoring.py`) evalúa la precisión geométrica, escala, orie
 
 ### Opción 1: Con Python directamente
 ```bash
-python server.py
+cd /d D:\bitacora_investigacion\2026\3T_TRIMESTRE\3T_PLATAFORMA_DE_DIBUJO_ESTATICA
+py -3.14 server.py
 ```
 O usando Uvicorn:
 ```bash
@@ -50,7 +51,7 @@ uvicorn server:app --reload --port 8000
 ```
 
 ### Opción 2: En Windows (Acceso rápido)
-Haz doble clic en el archivo:
+Haz doble clic en el archivo: 
 ```
 iniciar_servidor.bat
 ```

@@ -34,3 +34,4 @@ data/morelia_layers.geojson
 *.swo
 .DS_Store
 Thumbs.db
+_backup_antes_stickers/
