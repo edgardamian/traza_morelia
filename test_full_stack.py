@@ -11,6 +11,8 @@ endpoints = [
     ("/api/layers", "application/json"),
     ("/api/anchors", "application/json"),
     ("/api/valle", "application/json"),
+    ("/api/pol_morelia", "application/json"),
+    ("/data/pol_morelia.geojson", "application/json"),
     ("/api/stats", "application/json"),
     ("/api/verdict?score=85", "application/json")
 ]

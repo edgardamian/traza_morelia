@@ -8,12 +8,12 @@
   <title>Traza Morelia | IMPLAN</title>
   <meta name="description"
     content="Plataforma de Percepción Geográfica y Memoria Espacial del Instituto Municipal de Planeación de Morelia (IMPLAN Morelia)." />
-  <link rel="icon" type="image/png" href="./static/img/favicon_traza_m.png" />
-  <meta name="theme-color" id="theme-color-meta" content="#f2f5ef" />
+  <link rel="icon" type="image/png" href="./img/logo_implan_sin_slogan.png" />
+  <meta name="theme-color" id="theme-color-meta" content="#00833e" />
   <meta name="color-scheme" content="light dark" />
 
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Traza Morelia · ¿Qué tanto conoces la ciudad?" />
+  <meta property="og:title" content="Croquis Morelia · ¿Qué tanto conoces la ciudad?" />
   <meta property="og:description" content="Dibuja los 2 ríos y los ejes históricos de Morelia de memoria." />
   <meta property="og:locale" content="es_MX" />
 
@@ -23,10 +23,10 @@
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="./static/style.css?v=20260922_crisp_polygons" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 
-<body data-difficulty="hard" style="background-color: #f2f5ef;">
+<body data-difficulty="normal">
   <noscript>
     <div class="noscript-msg">Croquis Morelia necesita JavaScript activo para dibujar el mapa.</div>
   </noscript>
@@ -36,11 +36,11 @@
     <header id="top-strip">
       <div id="implan-top-bar">
         <div class="implan-brand">
-          <img src="./static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="implan-logo-header" />
+          <img src="./img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="implan-logo-header" />
           <span class="implan-brand-divider" aria-hidden="true"></span>
-          <img src="./static/img/escudo_morelia_clean.png" alt="Ayuntamiento de Morelia" class="implan-escudo-header" />
+          <img src="./img/escudo_morelia_clean.png" alt="Ayuntamiento de Morelia" class="implan-escudo-header" />
           <span class="implan-brand-divider" aria-hidden="true"></span>
-          <img src="./static/img/sigem_gris.png" alt="SIGEM" class="implan-sigem-header" />
+          <img src="./img/sigem_gris.png" alt="SIGEM" class="implan-sigem-header" />
         </div>
 
         <div id="progress-row" class="progress-row-inline">
@@ -59,28 +59,16 @@
           </div>
         </div>
 
-        <div class="difficulty-toggle-group is-locked" id="difficulty-toggle-group" role="group"
-          aria-label="Nivel de dificultad fijado"
-          title="Modo fijado al inicio. Para cambiar de modo, presiona el botón Reiniciar">
-          <button class="mode-select-btn mode-facil-btn" id="mode-facil-btn" type="button" aria-pressed="false" disabled
-            title="Modo fácil (Fijado. Presiona Reiniciar para cambiar de modo)">
-            <svg class="mode-btn-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polygon
-                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-              </polygon>
-            </svg>
-            <span class="mode-btn-label"><span class="mode-label-prefix">Modo </span>fácil</span>
-          </button>
-          <button class="mode-select-btn mode-dificil-btn active" id="mode-dificil-btn" type="button"
-            aria-pressed="true" disabled title="Modo difícil (Fijado. Presiona Reiniciar para cambiar de modo)">
-            <svg class="mode-btn-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
-            <span class="mode-btn-label"><span class="mode-label-prefix">Modo </span>difícil</span>
-          </button>
-        </div>
+        <button class="hard-mode-toggle" id="anchors-toggle" type="button" aria-pressed="false"
+          title="Alternar modo difícil a ciegas">
+          <span class="hard-toggle-stripes" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          <span class="hard-toggle-copy">
+            <span class="hard-toggle-main">Modo difícil</span>
+            <span class="hard-toggle-sub">Sin referencias</span>
+          </span>
+        </button>
 
         <div class="header-actions-right" id="header-actions-right">
           <button id="borrar-btn" class="icon-btn" type="button" aria-label="Borrar trazo actual" disabled
@@ -101,19 +89,6 @@
             </svg>
           </button>
 
-          <button id="anchor-size-btn" class="icon-btn anchor-size-btn" type="button"
-            aria-label="Aumentar tamaño de texto de referencias"
-            title="Tamaño de texto de referencias: Normal (clic para agrandar)">
-            <svg class="anchor-size-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M3 18l4.5-12 4.5 12"></path>
-              <path d="M4.8 13.5h5.4"></path>
-              <path d="M14.5 18l3.2-8 3.2 8"></path>
-              <path d="M15.8 14.8h3.8"></path>
-            </svg>
-            <span class="anchor-size-badge" id="anchor-size-badge" aria-hidden="true">+</span>
-          </button>
-
           <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto"
             title="Información">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -124,7 +99,8 @@
             </svg>
           </button>
 
-          <button id="pista-btn" class="pista-btn" type="button" aria-expanded="false" title="Revelar pista geográfica">
+          <button id="pista-btn" class="pista-btn" type="button" aria-expanded="false"
+            title="Revelar pista geográfica">
             <svg class="pista-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M9 18h6"></path>
@@ -140,7 +116,7 @@
     </header>
 
     <!-- LIENZO DE MAPA SVG -->
-    <main id="map-wrap" style="background-color: #f2f5ef;">
+    <main id="map-wrap">
       <svg id="map" preserveAspectRatio="xMidYMid meet" role="img"
         aria-label="Mapa interactivo de Morelia para dibujar de memoria">
         <defs>
@@ -156,11 +132,9 @@
         </defs>
 
         <g id="zoom-root">
-          <!-- Silueta del Valle / Mancha Urbana (cd_morelia_pol.geojson) -->
+          <!-- Silueta del Valle / Mancha Urbana -->
           <g id="layer-valle"></g>
-          <!-- 21 Polígonos de Referencia Guía con Contorno Punteado para Modo Fácil (pol_morelia.geojson) -->
-          <g id="layer-pol-morelia"></g>
-          <!-- Puntos de Ancla / Referencias (morelia_anchors.geojson) -->
+          <!-- Puntos de Ancla / Referencias -->
           <g id="layer-anchors"></g>
           <!-- Geometría Real Revelada -->
           <g id="layer-truth"></g>
@@ -178,7 +152,7 @@
           </div>
           <div class="reveal-tier-wrap">
             <span id="reveal-hard-label" class="reveal-hard-label" hidden>MODO DIFÍCIL</span>
-            <span id="reveal-tier" class="reveal-tier">Nivel 5: GPS Moreliano</span>
+            <span id="reveal-tier" class="reveal-tier">Moreliano de Cepa</span>
           </div>
           <button id="reveal-toggle-btn" class="reveal-toggle-btn" type="button" aria-expanded="true"
             title="Minimizar / Explorar mapa completo">
@@ -209,40 +183,6 @@
         </div>
       </div>
 
-      <!-- INDICADOR CARTOGRÁFICO DE NORTE -->
-      <div id="map-north" class="map-north" role="button" tabindex="0"
-        aria-label="Norte geográfico. Clic para centrar y reorientar el mapa"
-        title="Norte geográfico (Orientación hacia el norte · Clic para re-centrar)">
-        <div class="north-compass-rose">
-          <svg class="north-arrow-svg" viewBox="0 0 44 44" width="44" height="44" fill="none"
-            xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <!-- Anillo exterior e interior cartográfico -->
-            <circle cx="22" cy="22" r="19" class="north-ring-outer" />
-            <circle cx="22" cy="22" r="14" class="north-ring-inner" />
-
-            <!-- Marcas cardinales E, O, S -->
-            <line x1="8" y1="22" x2="11" y2="22" class="north-tick" />
-            <line x1="33" y1="22" x2="36" y2="22" class="north-tick" />
-            <line x1="22" y1="33" x2="22" y2="36" class="north-tick" />
-
-            <!-- Letra N destacada -->
-            <text x="22" y="10.5" class="north-label-n">N</text>
-
-            <!-- Flecha Norte bicolor (Cantera Rosa IMPLAN y Terracota) -->
-            <polygon points="22,12 18,22 22,20.2" class="north-needle-main" />
-            <polygon points="22,12 26,22 22,20.2" class="north-needle-shadow" />
-
-            <!-- Flecha Sur bicolor (Gris cartográfico sutil) -->
-            <polygon points="22,32 18,22 22,20.2" class="south-needle-main" />
-            <polygon points="22,32 26,22 22,20.2" class="south-needle-shadow" />
-
-            <!-- Pivote central -->
-            <circle cx="22" cy="21.5" r="2.2" class="north-pivot" />
-            <circle cx="22" cy="21.5" r="0.8" fill="#ffffff" />
-          </svg>
-        </div>
-      </div>
-
       <!-- CONTROLES DE ZOOM FLOTANTES -->
       <div id="zoom-controls" class="zoom-controls" role="group" aria-label="Controles de zoom y encuadre">
         <button id="zoom-in-btn" class="zoom-btn" type="button" aria-label="Acercar mapa" title="Acercar mapa (+)">
@@ -258,10 +198,10 @@
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
         </button>
-        <button id="zoom-reset-btn" class="zoom-btn zoom-reset" type="button"
-          aria-label="Centrar y restablecer encuadre" title="Centrar y restablecer encuadre (⟲ o tecla 0)">
-          <svg class="zoom-reset-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <button id="zoom-reset-btn" class="zoom-btn zoom-reset" type="button" aria-label="Centrar y restablecer encuadre"
+          title="Centrar y restablecer encuadre (⟲ o tecla 0)">
+          <svg class="zoom-reset-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <polyline points="3 3 3 8 8 8"></polyline>
           </svg>
@@ -269,14 +209,11 @@
         <div id="zoom-level-text" class="zoom-level-badge" title="Nivel de zoom actual">100%</div>
       </div>
 
-      <!-- TOAST DE CONFIRMACIÓN VISUAL PARA ACCIONES DEL MAPA -->
-      <div id="map-toast" class="map-toast" aria-live="polite" hidden></div>
-
       <!-- INSTRUCCIÓN FLOTANTE DISCRETA EN LA PARTE SUPERIOR -->
       <div id="draw-prompt" class="draw-prompt">
         <div class="draw-prompt-main">
-          <svg class="draw-prompt-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg class="draw-prompt-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
             <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
             <path d="M2 2l7.586 7.586"></path>
@@ -318,11 +255,11 @@
           <div class="share-card" id="share-card">
             <div class="share-card-header">
               <div class="share-card-brand-logos">
-                <img src="./static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="share-implan-logo" />
+                <img src="./img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="share-implan-logo" />
                 <span class="share-brand-sep" aria-hidden="true"></span>
-                <img src="./static/img/escudo_morelia_clean.png" alt="Morelia" class="share-escudo-logo" />
+                <img src="./img/escudo_morelia_clean.png" alt="Morelia" class="share-escudo-logo" />
                 <span class="share-brand-sep" aria-hidden="true"></span>
-                <img src="./static/img/sigem_gris.png" alt="SIGEM" class="share-sigem-logo" />
+                <img src="./img/sigem_gris.png" alt="SIGEM" class="share-sigem-logo" />
 
               </div>
               <div class="share-card-brand">
@@ -344,21 +281,13 @@
 
             <!-- PUNTAJE GLOBAL & VEREDICTO -->
             <div class="share-card-score-area">
-              <div class="share-card-score-hero" id="share-card-score-hero">
-                <div class="share-card-sticker-wrap" id="share-card-sticker-wrap">
-                  <img id="share-sticker-img" class="share-card-sticker-img"
-                    src="./static/img/stickers/nivel5_gps_moreliano.png" alt="Sticker de Calificación Global" />
-                </div>
-                <div class="share-card-score-content">
-                  <div class="share-card-score" id="share-card-score">
-                    <span id="global-score">0</span><span class="share-card-score-den">/100</span>
-                  </div>
-                  <div class="share-verdict" id="share-verdict">Nivel 5: GPS Moreliano</div>
-                  <p class="share-phrase" id="share-phrase">"Tu trazo tiene brújula propia."</p>
-                </div>
+              <div class="share-card-score" id="share-card-score">
+                <span id="global-score">0</span><span class="share-card-score-den">/100</span>
               </div>
+              <div class="share-verdict" id="share-verdict">Moreliano de Cepa</div>
+              <p class="share-phrase" id="share-phrase">"Te sabes las calles mejor que chofer de Ruta Gris"</p>
 
-              <div class="share-card-social-callout" hidden>
+              <div class="share-card-social-callout">
                 <p class="share-social-text">Tómale una foto o video a tu marcador, etiquétanos en tus redes sociales y
                   compartimos tu post, el post con mas likes se llevara una sopresa a fin de mes.</p>
                 <div class="share-social-tags">
@@ -397,10 +326,9 @@
               </div>
             </div>
 
-            <div class="share-card-footer" hidden>
+            <div class="share-card-footer">
               <div class="share-mobility-banner-wrap">
-                <img src="./static/img/cenefa_movilidad.png" alt="Movilidad Sustentable"
-                  class="share-mobility-banner" />
+                <img src="./img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="share-mobility-banner" />
               </div>
               <span id="share-card-footer-text">IMPLAN Morelia · Instituto Municipal de Planeación ·
                 www.implanmorelia.org</span>
@@ -469,12 +397,11 @@
     <div class="modal-content welcome-modal-content">
       <div class="welcome-modal-banner">
         <div class="welcome-logos-row">
-          <img src="./static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="welcome-implan-logo" />
+          <img src="./img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="welcome-implan-logo" />
           <span class="welcome-logo-sep" aria-hidden="true"></span>
-          <img src="./static/img/escudo_morelia_clean.png" alt="H. Ayuntamiento de Morelia"
-            class="welcome-escudo-logo" />
+          <img src="./img/escudo_morelia_clean.png" alt="H. Ayuntamiento de Morelia" class="welcome-escudo-logo" />
           <span class="welcome-logo-sep" aria-hidden="true"></span>
-          <img src="./static/img/sigem_gris.png" alt="SIGEM Morelia" class="welcome-sigem-logo" />
+          <img src="./img/sigem_gris.png" alt="SIGEM Morelia" class="welcome-sigem-logo" />
         </div>
       </div>
       <div class="modal-header">
@@ -484,66 +411,13 @@
         </div>
       </div>
       <div class="modal-body">
-        <p class="welcome-intro-p">Traza de memoria sobre el mapa el acueducto, ríos y vialidades emblemáticas de
-          Morelia. Evaluaremos tus trazos contra la cartografía oficial del <strong>IMPLAN</strong>.</p>
+        <p class="welcome-intro-p">Traza de memoria sobre el mapa el acueducto, ríos y vialidades emblemáticas de Morelia. Evaluaremos tus trazos en tiempo real contra la cartografía oficial del <strong>IMPLAN</strong>.</p>
 
-        <!-- SELECTOR DE NIVEL DE DIFICULTAD INICIAL -->
-        <div class="welcome-difficulty-section" id="welcome-difficulty-section">
-          <label class="welcome-name-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polygon
-                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-              </polygon>
-            </svg>
-            <span>Selecciona tu nivel de dificultad: <strong class="name-required-asterisk">*</strong></span>
-          </label>
-          <div class="welcome-diff-cards" role="radiogroup" aria-label="Nivel de dificultad inicial">
-            <button type="button" class="welcome-diff-card card-facil" id="welcome-mode-facil-btn" role="radio"
-              aria-checked="false" data-mode="facil">
-              <div class="diff-card-top">
-                <span class="diff-badge badge-facil">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polygon
-                      points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                    </polygon>
-                  </svg>
-                  Modo fácil
-                </span>
-                <span class="diff-radio-circle" aria-hidden="true"><span class="diff-radio-inner"></span></span>
-              </div>
-              <p class="diff-card-desc"><strong>Con 21 polígonos guía</strong>, puntos de referencia, silueta urbana y
-                pistas activas.
-              </p>
-            </button>
-
-            <button type="button" class="welcome-diff-card card-dificil active" id="welcome-mode-dificil-btn"
-              role="radio" aria-checked="true" data-mode="hard">
-              <div class="diff-card-top">
-                <span class="diff-badge badge-dificil">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                  </svg>
-                  Modo difícil
-                </span>
-                <span class="diff-radio-circle" aria-hidden="true"><span class="diff-radio-inner"></span></span>
-              </div>
-              <p class="diff-card-desc"><strong>Sin 21 polígonos guía</strong>, pero con puntos de referencia, silueta
-                urbana y
-                pistas activas.
-              </p>
-            </button>
-          </div>
-          <div class="welcome-diff-notice">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-            <span>El nivel elegido quedará <strong>fijo</strong> durante todo el reto. Solo podrá cambiarse reiniciando
-              el croquis.</span>
+        <div class="about-tips">
+          <div class="tips-row">
+            <span><strong>Normal:</strong> con referencias</span>
+            <span class="tip-sep" aria-hidden="true">·</span>
+            <span><strong>Difícil:</strong> sin referencias</span>
           </div>
         </div>
 
@@ -559,13 +433,11 @@
           </label>
           <input type="text" id="player-name-input" class="welcome-name-input"
             placeholder="Ingresa tu nombre o apodo (ej. Rodrigo)" maxlength="35" autocomplete="name" required />
-          <span class="welcome-name-hint" id="welcome-name-hint">Obligatorio para iniciar la prueba y firmar tu
-            croquis.</span>
+          <span class="welcome-name-hint" id="welcome-name-hint">Obligatorio para iniciar la prueba y firmar tu croquis.</span>
         </div>
 
         <div class="about-contact-box">
-          <span><strong>IMPLAN Morelia</strong> · <a href="https://www.implanmorelia.org" target="_blank"
-              rel="noopener">www.implanmorelia.org</a> · Tel. (443) 314 05 38</span>
+          <span><strong>IMPLAN Morelia</strong> · <a href="https://www.implanmorelia.org" target="_blank" rel="noopener">www.implanmorelia.org</a> · Tel. (443) 314 05 38</span>
         </div>
       </div>
       <div class="modal-footer">
@@ -579,7 +451,7 @@
         </button>
       </div>
       <div class="modal-bottom-mobility">
-        <img src="./static/img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="modal-mobility-banner" />
+        <img src="./img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="modal-mobility-banner" />
       </div>
     </div>
   </div>
@@ -590,12 +462,11 @@
     <div class="modal-content welcome-modal-content info-modal-content">
       <div class="welcome-modal-banner">
         <div class="welcome-logos-row">
-          <img src="./static/img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="welcome-implan-logo" />
+          <img src="./img/logo_implan_sin_slogan.png" alt="IMPLAN Morelia" class="welcome-implan-logo" />
           <span class="welcome-logo-sep" aria-hidden="true"></span>
-          <img src="./static/img/escudo_morelia_clean.png" alt="H. Ayuntamiento de Morelia"
-            class="welcome-escudo-logo" />
+          <img src="./img/escudo_morelia_clean.png" alt="H. Ayuntamiento de Morelia" class="welcome-escudo-logo" />
           <span class="welcome-logo-sep" aria-hidden="true"></span>
-          <img src="./static/img/sigem_gris.png" alt="SIGEM Morelia" class="welcome-sigem-logo" />
+          <img src="./img/sigem_gris.png" alt="SIGEM Morelia" class="welcome-sigem-logo" />
         </div>
       </div>
       <div class="modal-header">
@@ -606,14 +477,13 @@
         <button class="modal-close-btn about-close-btn" type="button" aria-label="Cerrar modal">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="welcome-intro-p">Traza de memoria sobre el mapa el acueducto, ríos y vialidades emblemáticas de
-          Morelia. Evaluaremos tus trazos en tiempo real contra la cartografía oficial del <strong>IMPLAN</strong>.</p>
+        <p class="welcome-intro-p">Traza de memoria sobre el mapa el acueducto, ríos y vialidades emblemáticas de Morelia. Evaluaremos tus trazos en tiempo real contra la cartografía oficial del <strong>IMPLAN</strong>.</p>
 
         <!-- PESTAÑAS DE INSTRUCCIONES Y NAVEGACIÓN -->
         <div class="instructions-section">
           <div class="instructions-tabs" role="tablist" aria-label="Instrucciones de la plataforma">
-            <button type="button" class="instruction-tab-btn active" id="tab-btn-usage" role="tab" aria-selected="true"
-              aria-controls="panel-usage" data-tab-target="panel-usage">
+            <button type="button" class="instruction-tab-btn active" id="tab-btn-usage" role="tab"
+              aria-selected="true" aria-controls="panel-usage" data-tab-target="panel-usage">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -624,8 +494,8 @@
               <span class="tab-label-short">¿Cómo usar?</span>
             </button>
 
-            <button type="button" class="instruction-tab-btn" id="tab-btn-nav" role="tab" aria-selected="false"
-              aria-controls="panel-nav" data-tab-target="panel-nav">
+            <button type="button" class="instruction-tab-btn" id="tab-btn-nav" role="tab"
+              aria-selected="false" aria-controls="panel-nav" data-tab-target="panel-nav">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
@@ -641,33 +511,28 @@
               <div class="instruction-step">
                 <div class="step-num">1</div>
                 <div class="step-content">
-                  <strong>Identifica el elemento:</strong> Observa en la barra superior el nombre y color de la vialidad
-                  o río a trazar (ej. <em>Río Chiquito, Calzada la Huerta, Acueducto</em>).
+                  <strong>Identifica el elemento:</strong> Observa en la barra superior el nombre y color de la vialidad o río a trazar (ej. <em>Río Chiquito, Calzada la Huerta, Acueducto</em>).
                 </div>
               </div>
 
               <div class="instruction-step">
                 <div class="step-num">2</div>
                 <div class="step-content">
-                  <strong>Traza de memoria:</strong> Dibuja sobre el mapa la trayectoria, curvatura y extensión del
-                  elemento tal como lo recuerdes en la ciudad.
+                  <strong>Traza de memoria:</strong> Dibuja sobre el mapa la trayectoria, curvatura y extensión del elemento tal como lo recuerdes en la ciudad.
                 </div>
               </div>
 
               <div class="instruction-step">
                 <div class="step-num">3</div>
                 <div class="step-content">
-                  <strong>Evalúa o corrige:</strong> Al terminar presiona <strong>Listo</strong> para evaluar tu
-                  precisión. Si deseas repetirlo antes de calificar, pulsa <strong>Borrar trazo</strong>.
+                  <strong>Evalúa o corrige:</strong> Al terminar presiona <strong>Listo</strong> para evaluar tu precisión. Si deseas repetirlo antes de calificar, pulsa <strong>Borrar trazo</strong>.
                 </div>
               </div>
 
               <div class="instruction-step">
                 <div class="step-num">4</div>
                 <div class="step-content">
-                  <strong>Pistas y Dificultad:</strong> En <strong>Modo fácil</strong> se visualizan los 21 polígonos
-                  guía, puntos de referencia y pistas activas. En <strong>Modo difícil</strong> se muestra
-                  únicamente el polígono de la ciudad y referencias, sin polígonos guía y con pistas desactivadas.
+                  <strong>Pistas y Dificultad:</strong> Pulsa <strong>Pista</strong> (💡) para obtener una referencia clave. Puedes alternar al <strong>Modo difícil</strong> para dibujar sin puntos de referencia.
                 </div>
               </div>
             </div>
@@ -693,22 +558,15 @@
                   </li>
                   <li>
                     <span class="action-tag">Mover</span>
-                    <span class="action-desc">Desliza con <strong>2 dedos simultáneos</strong> para mover el
-                      mapa.</span>
+                    <span class="action-desc">Desliza con <strong>2 dedos simultáneos</strong> para mover el mapa.</span>
                   </li>
                   <li>
                     <span class="action-tag">Zoom</span>
-                    <span class="action-desc"><strong>Pellizca con 2 dedos</strong> o pulsa los botones
-                      <strong>+</strong> / <strong>−</strong>.</span>
+                    <span class="action-desc"><strong>Pellizca con 2 dedos</strong> o pulsa los botones <strong>+</strong> / <strong>−</strong>.</span>
                   </li>
                   <li>
                     <span class="action-tag">Centrar</span>
                     <span class="action-desc">Toca el botón flotante <strong>⟲</strong> (arriba a la derecha).</span>
-                  </li>
-                  <li>
-                    <span class="action-tag">Texto</span>
-                    <span class="action-desc">Toca el botón <strong>aA</strong> para agrandar los nombres de puntos de
-                      referencia.</span>
                   </li>
                 </ul>
               </div>
@@ -731,23 +589,15 @@
                   </li>
                   <li>
                     <span class="action-tag">Mover</span>
-                    <span class="action-desc">Mantén <strong>Espacio</strong> + arrastrar, o <strong>clic
-                        derecho</strong>.</span>
+                    <span class="action-desc">Mantén <strong>Espacio</strong> + arrastrar, o <strong>clic derecho</strong>.</span>
                   </li>
                   <li>
                     <span class="action-tag">Zoom</span>
-                    <span class="action-desc"><strong>Scroll del ratón</strong> o botones flotantes <strong>+</strong> /
-                      <strong>−</strong>.</span>
+                    <span class="action-desc"><strong>Scroll del ratón</strong> o botones flotantes <strong>+</strong> / <strong>−</strong>.</span>
                   </li>
                   <li>
                     <span class="action-tag">Centrar</span>
-                    <span class="action-desc">Pulsa el botón flotante <strong>⟲</strong> o la tecla
-                      <strong>0</strong>.</span>
-                  </li>
-                  <li>
-                    <span class="action-tag">Texto</span>
-                    <span class="action-desc">Pulsa el botón <strong>aA</strong> o la tecla <strong>T</strong> para
-                      agrandar los nombres de referencias.</span>
+                    <span class="action-desc">Pulsa el botón flotante <strong>⟲</strong> o la tecla <strong>0</strong>.</span>
                   </li>
                 </ul>
               </div>
@@ -756,8 +606,7 @@
         </div>
 
         <div class="about-contact-box">
-          <span><strong>IMPLAN Morelia</strong> · <a href="https://www.implanmorelia.org" target="_blank"
-              rel="noopener">www.implanmorelia.org</a> · Tel. (443) 314 05 38</span>
+          <span><strong>IMPLAN Morelia</strong> · <a href="https://www.implanmorelia.org" target="_blank" rel="noopener">www.implanmorelia.org</a> · Tel. (443) 314 05 38</span>
         </div>
       </div>
       <div class="modal-footer">
@@ -771,7 +620,7 @@
         </button>
       </div>
       <div class="modal-bottom-mobility">
-        <img src="./static/img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="modal-mobility-banner" />
+        <img src="./img/cenefa_movilidad.png" alt="Movilidad Sustentable" class="modal-mobility-banner" />
       </div>
     </div>
   </div>
@@ -781,12 +630,11 @@
     aria-labelledby="confirm-mode-title">
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content">
-      <h3 id="confirm-mode-title">¿Reiniciar para cambiar de modo?</h3>
-      <p id="confirm-mode-body">El nivel fue seleccionado al inicio y está fijado para esta prueba. Para cambiar de modo
-        es necesario reiniciar el croquis.</p>
+      <h3 id="confirm-mode-title">¿Cambiar de dificultad?</h3>
+      <p id="confirm-mode-body">Cambiar de modo reiniciará tu croquis para que el puntaje sea justo.</p>
       <div class="modal-actions">
-        <button id="confirm-mode-cancel-btn" class="pill-btn ghost" type="button">Continuar prueba</button>
-        <button id="confirm-mode-switch-btn" class="pill-btn secondary" type="button">Reiniciar y cambiar modo</button>
+        <button id="confirm-mode-cancel-btn" class="pill-btn ghost" type="button">Conservar trazos</button>
+        <button id="confirm-mode-switch-btn" class="pill-btn secondary" type="button">Cambiar modo</button>
       </div>
     </div>
   </div>
@@ -810,11 +658,10 @@
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="confirm-reset-title">¿Estás seguro de que quieres reiniciar?</h3>
+        <h3 id="confirm-reset-title">¿Reiniciar todo el croquis?</h3>
         <button class="modal-close-btn confirm-reset-close" type="button" aria-label="Cerrar modal">&times;</button>
       </div>
-      <p id="confirm-reset-body">Se borrarán todos tus trazos actuales y volverás al inicio del croquis. Podrás cambiar
-        tu nombre o nivel de dificultad.</p>
+      <p id="confirm-reset-body">Se borrarán todos tus trazos y volverás a empezar desde el primer elemento.</p>
       <div class="modal-actions">
         <button id="confirm-reset-cancel-btn" class="pill-btn ghost" type="button">Cancelar</button>
         <button id="reset-all-btn" class="pill-btn highlight" type="button">
@@ -823,7 +670,7 @@
             <polyline points="1 4 1 10 7 10"></polyline>
             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
           </svg>
-          <span>Sí, reiniciar</span>
+          <span>Reiniciar todo</span>
         </button>
       </div>
     </div>
@@ -837,11 +684,11 @@
     };
   </script>
 
-  <script src="./static/vendor/d3.v7.min.js"></script>
-  <script src="./static/scoring.js?v=20260922_crisp_polygons"></script>
-  <script src="./data/morelia_data.js?v=20260922_crisp_polygons"></script>
-  <script src="./static/db.js?v=20260922_crisp_polygons"></script>
-  <script src="./static/app.js?v=20260922_crisp_polygons"></script>
+  <script src="./vendor/d3.v7.min.js"></script>
+  <script src="./scoring.js?v=20260921_hintfix"></script>
+  <script src="../data/morelia_data.js?v=20260921_hintfix"></script>
+  <script src="./db.js?v=20260921_hintfix"></script>
+  <script src="./app.js?v=20260921_hintfix"></script>
 </body>
 
 </html>

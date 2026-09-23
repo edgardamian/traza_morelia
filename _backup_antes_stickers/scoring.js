@@ -94,29 +94,6 @@
     return coords;
   }
 
-  function getAttr(props, ...candidates) {
-    if (!props || typeof props !== 'object') return '';
-    for (const key of candidates) {
-      if (props[key] !== undefined && props[key] !== null) {
-        const val = String(props[key]).trim();
-        if (val) return val;
-      }
-    }
-    // Búsqueda insensible a mayúsculas/minúsculas para campos creados o editados en QGIS
-    const lowerMap = {};
-    for (const k of Object.keys(props)) {
-      lowerMap[k.toLowerCase()] = props[k];
-    }
-    for (const key of candidates) {
-      const lower = key.toLowerCase();
-      if (lowerMap[lower] !== undefined && lowerMap[lower] !== null) {
-        const val = String(lowerMap[lower]).trim();
-        if (val) return val;
-      }
-    }
-    return '';
-  }
-
   function parseMoreliaLayers(geojson) {
     if (!geojson || !Array.isArray(geojson.features)) return [];
     const layers = [];
@@ -127,25 +104,27 @@
       const coords = cleanCoords(feat.geometry);
       if (coords.length < 2) return;
 
-      const rawName = getAttr(props, 'Nombre', 'nombre', 'Name', 'name', 'titulo', 'etiqueta', 'label') || `Capa ${idx + 1}`;
+      const rawName = props.Nombre || props.nombre || props.Name || props.name || props.NAME || props.id || `Capa ${idx + 1}`;
       const name = String(rawName).trim();
-      const rawId = getAttr(props, 'id', 'ID', 'slug', 'capa_id') || slugify(name) || `capa-${idx + 1}`;
+      const rawId = props.id || props.ID || slugify(name) || `capa-${idx + 1}`;
       let layerId = slugify(rawId);
       if (seenIds.has(layerId)) layerId = `${layerId}-${idx + 1}`;
       seenIds.add(layerId);
 
       const lineLen = pathLengthMeters(coords);
-      let tolScale = Number(getAttr(props, 'toleranceScale', 'tolerancescale', 'tolerancia'));
+      let tolScale = Number(props.toleranceScale || props.TOLERANCESCALE);
       if (isNaN(tolScale) || tolScale <= 0) {
         tolScale = Math.round(Math.max(380.0, Math.min(1400.0, 240.0 + Math.sqrt(lineLen) * 6.0)));
       }
 
       const nLower = name.toLowerCase();
-      let category = getAttr(props, 'category', 'categoria', 'tipo');
-      
-      // Pista editable directamente desde QGIS (kicker, pista, hint, ayuda, desc_corta)
-      let kicker = getAttr(props, 'kicker', 'kiker', 'pista', 'pistas', 'hint', 'ayuda', 'descripcion_corta', 'desc_corta');
-      let color = getAttr(props, 'color', 'colour', 'hex', 'stroke', 'line_color');
+      let category = String(props.category || props.CATEGORY || '').trim();
+      let kicker = String(
+        props.kicker || props.kiker ||
+        props.KICKER || props.KIKER ||
+        props.Kicker || props.Kiker || ''
+      ).trim();
+      let color = String(props.color || props.COLOR || '').trim();
 
       if (!category || !color) {
         if (nLower.includes('chiquito')) {
@@ -184,10 +163,9 @@
         }
       }
 
-      const textColor = getAttr(props, 'textColor', 'textcolor', 'color_texto', 'colortexto') || color;
+      const textColor = String(props.textColor || props.TEXTCOLOR || color);
 
-      // Abreviatura editable directamente desde QGIS (badge, abrev, abreviatura, sigla, siglas, etc.)
-      let badge = getAttr(props, 'badge', 'abrev', 'abreviatura', 'sigla', 'siglas', 'acronimo', 'codigo', 'tag');
+      let badge = String(props.badge || props.BADGE || '').trim();
       if (!badge) {
         const cleanWords = name.split(/[\s\.\-]+/).filter(w => !['el', 'la', 'los', 'las', 'de', 'del', 'av', 'ave', 'avenida', 'calle', 'calzada', 'boulevard', 'blvd', 'rio', 'río', 'paseo'].includes(w.toLowerCase()));
         if (cleanWords.length >= 2) {
@@ -200,16 +178,16 @@
       }
 
       const articulated = articularNombre(name);
-      // La pista es EXCLUSIVAMENTE lo que el usuario define en lineas_morelia.geojson (kicker/pista)
-      let hint = kicker;
+      // La pista es EXCLUSIVAMENTE el kicker/kiker definido en lineas_morelia.geojson sin sintetizar pistas inventadas
+      let hint = String(props.hint || props.HINT || kicker).trim();
 
-      let prompt = getAttr(props, 'prompt', 'mision', 'instruccion');
+      let prompt = String(props.prompt || props.PROMPT || '').trim();
       if (!prompt) prompt = `Traza de memoria la ubicación, forma y extensión ${articulated}`;
 
-      let desc = getAttr(props, 'description', 'descripcion', 'desc');
+      let desc = String(props.description || props.DESCRIPTION || '').trim();
       if (!desc) desc = `Traza de memoria la ubicación, forma y extensión ${articulated} sobre la mancha urbana de Morelia.`;
 
-      const diffAdvice = getAttr(props, 'difficultyAdvice', 'dificultad_consejo') || `Traza de memoria la ubicación, forma y extensión ${articulated} sin referencias.`;
+      const diffAdvice = String(props.difficultyAdvice || props.DIFFICULTYADVICE || `Traza de memoria la ubicación, forma y extensión ${articulated} sin referencias.`);
 
       let bbox = feat.bbox || props.bbox;
       if (!bbox || !Array.isArray(bbox) || bbox.length < 4) {
@@ -221,11 +199,8 @@
         name,
         articulatedName: articulated,
         kicker,
-        hint,
-        pista: hint,
         badge,
-        abrev: badge,
-        abreviatura: badge,
+        hint,
         prompt,
         category,
         color,
@@ -342,27 +317,22 @@
 
   const MORELIA_TIER_PHRASES = [
     {
-      level: 5,
       min: 85,
-      title: "Nivel 5: GPS Moreliano",
-      sticker: "nivel5_gps_moreliano.png",
+      title: "Nivel 5: Mapa Mental Moreliano",
       phrases: [
-        "Tu trazo tiene brújula propia.",
         "Traes Morelia perfectamente trazada en la cabeza",
         "Traes el GPS implantado en el cerebro, ¡Taxista!",
         "Manejas el trazado de las calles como si tú hubieras construido media ciudad",
         "Parece que creciste nadando en el Río Chiquito",
         "Se ve que si le sabes Lusitoo!",
+        "Ese trazo trae brújula propia.",
         "Aquí hay talento cartográfico. El IMPLAN toma nota 👀"
       ]
     },
     {
-      level: 4,
       min: 75,
       title: "Nivel 4: Conocimiento Moreliano",
-      sticker: "nivel4_conocimiento_moreliano.png",
       phrases: [
-        "Te ubicas muy bien, incluso sin ver un mapa.",
         "Te ubicas perfecto sin necesidad de abrir Google Maps",
         "Sabes llegar a cualquier lado guiándote por la cantera",
         "Conoces la ciudad de memoria con una que otra duda razonable",
@@ -372,12 +342,9 @@
       ]
     },
     {
-      level: 3,
       min: 50,
       title: "Nivel 3: Perdido en el bosque Cuauhtémoc",
-      sticker: "nivel3_perdido_en_el_bosque_cuahutemoc.png",
       phrases: [
-        "La intuición te ayudó, aunque algunos trazos improvisaron.",
         "Te ubicas en el Centro, pero te pierdes pasando el Libramiento",
         "Sabes llegar en Combi, pero no sabes cómo dibujarlo",
         "Casi le atinas, la cantera te guio a medias",
@@ -388,12 +355,9 @@
       ]
     },
     {
-      level: 2,
       min: 30,
-      title: "Nivel 2: Mood despistado",
-      sticker: "nivel2_mood_despistado.png",
+      title: "NIVEL 2: Mood despistado",
       phrases: [
-        "Hay potencial cartográfico: solo falta afinar el trazo.",
         "Confundes Las Tarascas con el Obelisco a Lázaro Cárdenas",
         "Tu río se fue a desembocar hasta Pátzcuaro",
         "Mandaste el Acueducto rumbo a Altozano",
@@ -405,60 +369,30 @@
       ]
     },
     {
-      level: 1,
-      min: 0,
-      title: "Nivel 1: Recién llegado a Morelia",
-      sticker: "nivel1_recien_llegado_a_morelia.png",
+      min: 15,
+      title: "NIVEL 1: Recién llegado a Morelia",
       phrases: [
-        "Tu Morelia sufrió una actualización inesperada.",
         "Para ti Morelia empieza y termina en los Portales",
         "¿Seguro que no estabas dibujando Uruapan?",
         "¿Venías manejando con los ojos cerrados o ibas esquivando marchas en la Madero?",
         "Pensaste que el Río Grande era una calle peatonal",
         "Puede que el río haya tomado vacaciones, pero el siguiente trazo puede salir mejor",
         "La ciudad sigue ahí. Ahora hay que encontrarla",
-        "Ni con Waze en la mano te salvas de esta, ¡vuelve a intentarlo!",
-        "¡Sigue paseando por Morelia es la única forma de conocerla!"
+        "Ni con Waze en la mano te salvas de esta, ¡vuelve a intentarlo!"
       ]
     }
   ];
 
-  function getStickerUrl(filename) {
-    if (!filename) return '';
-    if (filename.startsWith('http') || filename.startsWith('/') || filename.startsWith('./')) {
-      return filename;
-    }
-    const isStaticSubdir = (typeof window !== 'undefined' && window.location.pathname.includes('/static/')) ||
-      (typeof document !== 'undefined' && Boolean(document.querySelector('script[src*="./scoring.js"]')));
-    return (isStaticSubdir ? './img/stickers/' : './static/img/stickers/') + filename;
-  }
-
-  function getStickerByLevel(level) {
-    const tier = MORELIA_TIER_PHRASES.find(t => t.level === Number(level));
-    return tier ? tier.sticker : 'nivel1_recien_llegado_a_morelia.png';
-  }
-
   function pickPhraseAndTier(score) {
-    const s = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
     for (const tier of MORELIA_TIER_PHRASES) {
-      if (s >= tier.min) {
+      if (score >= tier.min) {
         const phrase = tier.phrases[Math.floor(Math.random() * tier.phrases.length)];
-        return {
-          phrase,
-          title: tier.title,
-          level: tier.level,
-          sticker: tier.sticker,
-          stickerUrl: getStickerUrl(tier.sticker)
-        };
+        return { phrase, title: tier.title };
       }
     }
-    const lastTier = MORELIA_TIER_PHRASES[MORELIA_TIER_PHRASES.length - 1];
     return {
-      phrase: lastTier.phrases[0],
-      title: lastTier.title,
-      level: lastTier.level,
-      sticker: lastTier.sticker,
-      stickerUrl: getStickerUrl(lastTier.sticker)
+      phrase: "¡Sigue paseando por Morelia es la única forma de conocerla!",
+      title: "Turista primerizo"
     };
   }
 
@@ -574,7 +508,7 @@
    */
   function evaluateStroke(drawnPoints, truthPoints, toleranceScale = 500.0) {
     if (!drawnPoints || drawnPoints.length < 2 || !truthPoints || truthPoints.length < 2) {
-      const { phrase, title, level, sticker, stickerUrl } = pickPhraseAndTier(0);
+      const { phrase, title } = pickPhraseAndTier(0);
       return {
         score: 0,
         scoreUbicacion: 0,
@@ -587,9 +521,6 @@
         lengthTruthMeters: 0.0,
         lengthRatio: 0.0,
         tierTitle: title,
-        tierLevel: level,
-        tierSticker: sticker,
-        stickerUrl: stickerUrl,
         phrase: phrase,
         truth: truthPoints || []
       };
@@ -753,7 +684,7 @@
     let finalScore = Math.round(scoreBase * factorCompletitud);
     finalScore = Math.max(0, Math.min(100, finalScore));
 
-    const { phrase, title, level, sticker, stickerUrl } = pickPhraseAndTier(finalScore);
+    const { phrase, title } = pickPhraseAndTier(finalScore);
 
     return {
       score: finalScore,
@@ -767,9 +698,6 @@
       lengthTruthMeters: Math.round(lenTruth * 10) / 10,
       lengthRatio: Math.round(ratioLargo * 100) / 100,
       tierTitle: title,
-      tierLevel: level,
-      tierSticker: sticker,
-      stickerUrl: stickerUrl,
       phrase: phrase,
       truth: truthPoints
     };
@@ -785,8 +713,6 @@
     parseMoreliaAnchors,
     slugify,
     articularNombre,
-    getStickerUrl,
-    getStickerByLevel,
     MORELIA_TIER_PHRASES
   };
 }));

@@ -1,0 +1,610 @@
+{
+  "type": "FeatureCollection",
+  "name": "Mi Croquis Mental de Morelia - sdfsd",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "properties": {
+    "participante": "sdfsd",
+    "fecha": "2026-09-21",
+    "dia_semana": "Lunes",
+    "hora": "11:31:50",
+    "fecha_hora": "2026-09-21T11:31:50.449503",
+    "timestamp": 1790011910,
+    "puntaje_global": 12,
+    "dificultad": "normal",
+    "total_capas_trazadas": 8,
+    "clientId": "b66675ee-7a42-4cff-98de-4b57aba579c2",
+    "perLineScores": {
+      "calzada-la-huerta": 8,
+      "av-morelos": 10,
+      "avenida-madero": 11,
+      "el-libramiento": 17,
+      "calzada-ventura-puente": 4,
+      "rio-grande": 27,
+      "acueducto-de-morelia": 8,
+      "rio-chiquito": 13
+    },
+    "metadatos": {
+      "difficulty": "normal",
+      "playerName": "sdfsd"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "calzada-la-huerta",
+        "nombre": "Calzada la Huerta",
+        "color": "#2e7d32",
+        "puntaje": 8,
+        "longitud_metros": 7425.7,
+        "participante": "sdfsd",
+        "fecha": "2026-09-21",
+        "dia_semana": "Lunes",
+        "hora": "11:31:50",
+        "dificultad": "normal",
+        "clientId": "b66675ee-7a42-4cff-98de-4b57aba579c2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.249073,
+            19.683518
+          ],
+          [
+            -101.247351,
+            19.683363
+          ],
+          [
+            -101.241856,
+            19.682668
+          ],
+          [
+            -101.230293,
+            19.682514
+          ],
+          [
+            -101.216762,
+            19.682591
+          ],
+          [
+            -101.203067,
+            19.682591
+          ],
+          [
+            -101.19175,
+            19.682591
+          ],
+          [
+            -101.183549,
+            19.682591
+          ],
+          [
+            -101.179285,
+            19.682591
+          ],
+          [
+            -101.178219,
+            19.682437
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "av-morelos",
+        "nombre": "Av Morelos",
+        "color": "#e91e63",
+        "puntaje": 10,
+        "longitud_metros": 7477.5,
+        "participante": "sdfsd",
+        "fecha": "2026-09-21",
+        "dia_semana": "Lunes",
+        "hora": "11:31:50",
+        "dificultad": "normal",
+        "clientId": "b66675ee-7a42-4cff-98de-4b57aba579c2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.230795,
+            19.696372
+          ],
+          [
+            -101.22498,
+            19.69752
+          ],
+          [
+            -101.217571,
+            19.699639
+          ],
+          [
+            -101.209788,
+            19.701581
+          ],
+          [
+            -101.200128,
+            19.703789
+          ],
+          [
+            -101.187562,
+            19.704936
+          ],
+          [
+            -101.175089,
+            19.705113
+          ],
+          [
+            -101.166461,
+            19.705113
+          ],
+          [
+            -101.163085,
+            19.705113
+          ],
+          [
+            -101.161491,
+            19.704936
+          ],
+          [
+            -101.160834,
+            19.704936
+          ],
+          [
+            -101.160459,
+            19.704848
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "avenida-madero",
+        "nombre": "Avenida Madero",
+        "color": "#f48fb1",
+        "puntaje": 11,
+        "longitud_metros": 18382.0,
+        "participante": "sdfsd",
+        "fecha": "2026-09-21",
+        "dia_semana": "Lunes",
+        "hora": "11:31:50",
+        "dificultad": "normal",
+        "clientId": "b66675ee-7a42-4cff-98de-4b57aba579c2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.261063,
+            19.736732
+          ],
+          [
+            -101.260577,
+            19.735817
+          ],
+          [
+            -101.258633,
+            19.733835
+          ],
+          [
+            -101.253288,
+            19.729414
+          ],
+          [
+            -101.24276,
+            19.722248
+          ],
+          [
+            -101.206965,
+            19.701359
+          ],
+          [
+            -101.168579,
+            19.683517
+          ],
+          [
+            -101.133594,
+            19.667503
+          ],
+          [
+            -101.112862,
+            19.660487
+          ],
+          [
+            -101.107841,
+            19.659267
+          ],
+          [
+            -101.107355,
+            19.659267
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "el-libramiento",
+        "nombre": "El Libramiento",
+        "color": "#7c3aed",
+        "puntaje": 17,
+        "longitud_metros": 14314.1,
+        "participante": "sdfsd",
+        "fecha": "2026-09-21",
+        "dia_semana": "Lunes",
+        "hora": "11:31:50",
+        "dificultad": "normal",
+        "clientId": "b66675ee-7a42-4cff-98de-4b57aba579c2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.242781,
+            19.66804
+          ],
+          [
+            -101.235025,
+            19.671062
+          ],
+          [
+            -101.222857,
+            19.675972
+          ],
+          [
+            -101.208416,
+            19.682142
+          ],
+          [
+            -101.189829,
+            19.688311
+          ],
+          [
+            -101.165761,
+            19.694102
+          ],
+          [
+            -101.140756,
+            19.698005
+          ],
+          [
+            -101.123774,
+            19.700145
+          ],
+          [
+            -101.115082,
+            19.701404
+          ],
+          [
+            -101.112542,
+            19.701907
+          ],
+          [
+            -101.111739,
+            19.702033
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "calzada-ventura-puente",
+        "nombre": "Calzada Ventura Puente",
+        "color": "#ea580c",
+        "puntaje": 4,
+        "longitud_metros": 7758.7,
+        "participante": "sdfsd",
+        "fecha": "2026-09-21",
+        "dia_semana": "Lunes",
+        "hora": "11:31:50",
+        "dificultad": "normal",
+        "clientId": "b66675ee-7a42-4cff-98de-4b57aba579c2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.213159,
+            19.696958
+          ],
+          [
+            -101.212503,
+            19.696572
+          ],
+          [
+            -101.205122,
+            19.696417
+          ],
+          [
+            -101.194297,
+            19.696417
+          ],
+          [
+            -101.183226,
+            19.696417
+          ],
+          [
+            -101.172811,
+            19.696417
+          ],
+          [
+            -101.165759,
+            19.695954
+          ],
+          [
+            -101.161494,
+            19.695413
+          ],
+          [
+            -101.158624,
+            19.694796
+          ],
+          [
+            -101.154852,
+            19.694178
+          ],
+          [
+            -101.149275,
+            19.693483
+          ],
+          [
+            -101.143289,
+            19.692557
+          ],
+          [
+            -101.140336,
+            19.692248
+          ],
+          [
+            -101.139516,
+            19.692093
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rio-grande",
+        "nombre": "Río Grande",
+        "color": "#1976d2",
+        "puntaje": 27,
+        "longitud_metros": 22073.4,
+        "participante": "sdfsd",
+        "fecha": "2026-09-21",
+        "dia_semana": "Lunes",
+        "hora": "11:31:50",
+        "dificultad": "normal",
+        "clientId": "b66675ee-7a42-4cff-98de-4b57aba579c2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.270463,
+            19.655814
+          ],
+          [
+            -101.263827,
+            19.658678
+          ],
+          [
+            -101.254426,
+            19.662584
+          ],
+          [
+            -101.244195,
+            19.666489
+          ],
+          [
+            -101.222075,
+            19.678206
+          ],
+          [
+            -101.201614,
+            19.689401
+          ],
+          [
+            -101.183917,
+            19.699293
+          ],
+          [
+            -101.170369,
+            19.7045
+          ],
+          [
+            -101.16235,
+            19.706582
+          ],
+          [
+            -101.156267,
+            19.708144
+          ],
+          [
+            -101.149354,
+            19.708925
+          ],
+          [
+            -101.140783,
+            19.709445
+          ],
+          [
+            -101.12834,
+            19.709966
+          ],
+          [
+            -101.117833,
+            19.709966
+          ],
+          [
+            -101.107049,
+            19.709966
+          ],
+          [
+            -101.097372,
+            19.709966
+          ],
+          [
+            -101.082994,
+            19.710747
+          ],
+          [
+            -101.073039,
+            19.711267
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "acueducto-de-morelia",
+        "nombre": "Acueducto de Morelia",
+        "color": "#fbc02d",
+        "puntaje": 8,
+        "longitud_metros": 5527.2,
+        "participante": "sdfsd",
+        "fecha": "2026-09-21",
+        "dia_semana": "Lunes",
+        "hora": "11:31:50",
+        "dificultad": "normal",
+        "clientId": "b66675ee-7a42-4cff-98de-4b57aba579c2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.196685,
+            19.688967
+          ],
+          [
+            -101.19242,
+            19.690666
+          ],
+          [
+            -101.18668,
+            19.692905
+          ],
+          [
+            -101.179463,
+            19.696843
+          ],
+          [
+            -101.172163,
+            19.700935
+          ],
+          [
+            -101.164946,
+            19.705027
+          ],
+          [
+            -101.159697,
+            19.708039
+          ],
+          [
+            -101.156745,
+            19.709428
+          ],
+          [
+            -101.154777,
+            19.710355
+          ],
+          [
+            -101.15289,
+            19.711127
+          ],
+          [
+            -101.15084,
+            19.711899
+          ],
+          [
+            -101.150102,
+            19.712131
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rio-chiquito",
+        "nombre": "Río Chiquito",
+        "color": "#00acc1",
+        "puntaje": 13,
+        "longitud_metros": 12112.4,
+        "participante": "sdfsd",
+        "fecha": "2026-09-21",
+        "dia_semana": "Lunes",
+        "hora": "11:31:50",
+        "dificultad": "normal",
+        "clientId": "b66675ee-7a42-4cff-98de-4b57aba579c2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -101.228058,
+            19.687836
+          ],
+          [
+            -101.227496,
+            19.687942
+          ],
+          [
+            -101.222884,
+            19.689107
+          ],
+          [
+            -101.213547,
+            19.691225
+          ],
+          [
+            -101.195548,
+            19.694614
+          ],
+          [
+            -101.181375,
+            19.695673
+          ],
+          [
+            -101.167988,
+            19.695673
+          ],
+          [
+            -101.154939,
+            19.695673
+          ],
+          [
+            -101.144365,
+            19.69472
+          ],
+          [
+            -101.135478,
+            19.693767
+          ],
+          [
+            -101.128391,
+            19.693449
+          ],
+          [
+            -101.120067,
+            19.693449
+          ],
+          [
+            -101.113318,
+            19.693449
+          ]
+        ]
+      }
+    }
+  ]
+}
