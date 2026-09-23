@@ -58,8 +58,10 @@
   let layersMeta = {};
   let anchorsList = [];
   let valleGeo = null;
+  let polMoreliaGeo = null;
 
-  function freshRunState(difficulty = "normal", playerName = "") {
+  function freshRunState(difficulty = "hard", playerName = "") {
+    const normalizedDiff = (difficulty === "facil") ? "facil" : "hard";
     return {
       order: shuffle(canonicalOrder),
       currentIndex: 0,
@@ -68,7 +70,7 @@
       perLineTiers: {},
       perLinePhrases: {},
       perLineStickers: {},
-      difficulty,
+      difficulty: normalizedDiff,
       playerName: playerName || "",
       finished: false,
       sessionSaved: false
@@ -85,7 +87,11 @@
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (!parsed || !Array.isArray(parsed.order)) return null;
-      if (parsed.difficulty !== "hard") parsed.difficulty = "normal";
+      if (parsed.difficulty === "facil") {
+        parsed.difficulty = "facil";
+      } else {
+        parsed.difficulty = "hard";
+      }
       parsed.playerName = typeof parsed.playerName === "string" ? parsed.playerName : "";
       return parsed;
     } catch (e) {
@@ -101,7 +107,8 @@
   function currentLineId() { return state.order[state.currentIndex]; }
   function currentLineMeta() { return layersMeta[currentLineId()]; }
   function drawnCount() { return Object.keys(state.drawnLines).length; }
-  function isHardMode() { return state && state.difficulty === "hard"; }
+  function isHardMode() { return Boolean(state && (state.difficulty === "hard" || state.difficulty === "dificil")); }
+  function isEasyMode() { return !isHardMode(); }
 
   // Referencias al DOM
   const svg = document.getElementById("map");
@@ -118,7 +125,7 @@
 
   function getPistaText(meta) {
     if (!meta) return "";
-    const raw = meta.kicker || meta.kiker || meta.Kicker || meta.KIKER || meta.hint || "";
+    const raw = meta.pista || meta.hint || meta.kicker || meta.kiker || meta.Kicker || meta.KIKER || "";
     return String(raw).trim();
   }
 
@@ -154,13 +161,14 @@
   }
 
   function togglePista() {
-    if (isHardMode()) return;
     const isHidden = drawPromptHint ? drawPromptHint.hasAttribute("hidden") : true;
     setPistaVisible(isHidden);
   }
 
   pistaBtn?.addEventListener("click", togglePista);
-  const anchorsToggle = document.getElementById("anchors-toggle");
+  const modeFacilBtn = document.getElementById("mode-facil-btn");
+  const modeDificilBtn = document.getElementById("mode-dificil-btn");
+  const anchorsToggle = document.getElementById("anchors-toggle") || modeDificilBtn;
   const themeColorMeta = document.getElementById("theme-color-meta");
   const progressEl = document.getElementById("progress-indicator");
   const progressDotsEl = document.getElementById("progress-dots");
@@ -168,6 +176,9 @@
   const listoBtn = document.getElementById("listo-btn");
   const verMapaBtn = document.getElementById("ver-mapa-btn");
   const aboutBtn = document.getElementById("about-btn");
+  const anchorSizeBtn = document.getElementById("anchor-size-btn");
+  const anchorSizeBadge = document.getElementById("anchor-size-badge");
+  const mapToast = document.getElementById("map-toast");
 
   // Controles de Zoom
   const zoomControls = document.getElementById("zoom-controls");
@@ -273,6 +284,7 @@
   const confirmResetCloseBtn = confirmResetModal?.querySelector(".confirm-reset-close");
 
   const gValle = d3.select("#layer-valle");
+  const gPolMorelia = d3.select("#layer-pol-morelia");
   const gAnchors = d3.select("#layer-anchors");
   const gTruth = d3.select("#layer-truth");
   const gUserdraw = d3.select("#layer-userdraw");
@@ -319,6 +331,7 @@
     if (!meta) return;
     projection = fitProjectionToBBox(meta.bbox, PAD_FRAC_LINE, currentZoom, panX, panY);
     renderValle();
+    renderPolMorelia();
     renderAnchors();
     renderUserDraw();
     if (currentRevealTruth) {
@@ -358,6 +371,21 @@
   zoomInBtn?.addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
   zoomOutBtn?.addEventListener("click", (e) => { e.stopPropagation(); zoomOut(); });
   zoomResetBtn?.addEventListener("click", (e) => { e.stopPropagation(); resetZoom(); });
+
+  const mapNorthBtn = document.getElementById("map-north");
+  mapNorthBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    resetZoom();
+    const svg = mapNorthBtn.querySelector(".north-arrow-svg");
+    if (svg) {
+      svg.style.transition = "transform 0.6s cubic-bezier(0.2, 1.6, 0.4, 1)";
+      svg.style.transform = "rotate(360deg)";
+      setTimeout(() => {
+        svg.style.transition = "";
+        svg.style.transform = "";
+      }, 620);
+    }
+  });
 
   // Soporte para rueda del ratón sobre el mapa
   mapWrap.addEventListener("wheel", (e) => {
@@ -401,15 +429,64 @@
 
   function clearLayer(sel) { sel.selectAll("*").remove(); }
 
+  // Normalización automática de devanado (winding) para asegurar que ningún polígono dibuje cajas globales
+  function normalizeGeoJSONWinding(fc) {
+    if (!fc || !Array.isArray(fc.features) || typeof d3 === "undefined" || !d3.geoArea) return fc;
+    fc.features.forEach((f) => {
+      if (!f || !f.geometry) return;
+      if (f.geometry.type === "Polygon" && Array.isArray(f.geometry.coordinates)) {
+        if (d3.geoArea(f) > 2 * Math.PI) {
+          f.geometry.coordinates = f.geometry.coordinates.map((ring) => ring.slice().reverse());
+        }
+      } else if (f.geometry.type === "MultiPolygon" && Array.isArray(f.geometry.coordinates)) {
+        f.geometry.coordinates = f.geometry.coordinates.map((poly) => {
+          const tempFeat = { type: "Feature", geometry: { type: "Polygon", coordinates: poly } };
+          if (d3.geoArea(tempFeat) > 2 * Math.PI) {
+            return poly.map((ring) => ring.slice().reverse());
+          }
+          return poly;
+        });
+      }
+    });
+    return fc;
+  }
+
   function renderValle() {
     clearLayer(gValle);
-    if (!valleGeo) return;
+    if (!valleGeo || !projection) return;
+    normalizeGeoJSONWinding(valleGeo);
     const geoPath = d3.geoPath(projection);
     gValle.selectAll("path.valle-fill")
       .data(valleGeo.features)
       .enter()
       .append("path")
       .attr("class", (d) => d.properties?.kind === "urban_core" ? "urban-core-fill" : "valle-fill")
+      .attr("fill", (d) => d.properties?.kind === "urban_core" ? "rgba(196, 91, 67, 0.06)" : "rgba(70, 50, 40, 0.055)")
+      .attr("stroke", (d) => d.properties?.kind === "urban_core" ? "rgba(196, 91, 67, 0.25)" : "rgba(70, 50, 40, 0.22)")
+      .attr("stroke-width", "1.4")
+      .attr("stroke-dasharray", "5 4")
+      .attr("stroke-linecap", "round")
+      .attr("stroke-linejoin", "round")
+      .attr("d", geoPath);
+  }
+
+  function renderPolMorelia() {
+    clearLayer(gPolMorelia);
+    // En modo difícil se ocultan los 21 polígonos guía
+    if (isHardMode() || !polMoreliaGeo || !projection) return;
+    normalizeGeoJSONWinding(polMoreliaGeo);
+    const geoPath = d3.geoPath(projection);
+    gPolMorelia.selectAll("path.pol-morelia-guide")
+      .data(polMoreliaGeo.features || [])
+      .enter()
+      .append("path")
+      .attr("class", "pol-morelia-guide")
+      .attr("fill", "rgba(70, 72, 75, 0.03)")
+      .attr("stroke", "rgba(55, 58, 62, 0.60)")
+      .attr("stroke-width", "1.45")
+      .attr("stroke-dasharray", "5 4")
+      .attr("stroke-linecap", "butt")
+      .attr("stroke-linejoin", "miter")
       .attr("d", geoPath);
   }
 
@@ -441,14 +518,137 @@
     "Parque de la Ciudad Industrial": 24
   };
 
+  // Configuración de Tamaños de Texto para Puntos de Referencia
+  const ANCHOR_SIZE_CONFIGS = [
+    {
+      level: 0,
+      label: "Normal",
+      shortLabel: "Normal",
+      badge: "1x",
+      scale: 1.0,
+      fontSize: "10px",
+      fontSizeMobile: "9.5px",
+      strokeWidth: "3px",
+      dotR: 3.2,
+      dotRMobile: 2.8,
+      charWidthDesktop: 5.8,
+      charWidthMobile: 5.1,
+      labelHeightDesktop: 14,
+      labelHeightMobile: 12
+    },
+    {
+      level: 1,
+      label: "Grande (+30%)",
+      shortLabel: "Grande",
+      badge: "+",
+      scale: 1.3,
+      fontSize: "13px",
+      fontSizeMobile: "12px",
+      strokeWidth: "3.5px",
+      dotR: 3.8,
+      dotRMobile: 3.2,
+      charWidthDesktop: 7.5,
+      charWidthMobile: 6.6,
+      labelHeightDesktop: 18,
+      labelHeightMobile: 15
+    },
+    {
+      level: 2,
+      label: "Muy grande (+60%)",
+      shortLabel: "Muy grande",
+      badge: "++",
+      scale: 1.6,
+      fontSize: "16px",
+      fontSizeMobile: "14.5px",
+      strokeWidth: "4.2px",
+      dotR: 4.4,
+      dotRMobile: 3.8,
+      charWidthDesktop: 9.3,
+      charWidthMobile: 8.2,
+      labelHeightDesktop: 22,
+      labelHeightMobile: 19
+    }
+  ];
+
+  const LS_ANCHOR_SIZE = "croquis_morelia_anchor_size";
+  let anchorSizeLevel = 0;
+  try {
+    const saved = localStorage.getItem(LS_ANCHOR_SIZE);
+    if (saved !== null) {
+      const idx = parseInt(saved, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < ANCHOR_SIZE_CONFIGS.length) {
+        anchorSizeLevel = idx;
+      }
+    }
+  } catch (_) {}
+
+  let mapToastTimer = null;
+  function showMapToast(msg) {
+    if (!mapToast) return;
+    mapToast.textContent = msg;
+    mapToast.hidden = false;
+    requestAnimationFrame(() => mapToast.classList.add("visible"));
+    if (mapToastTimer) clearTimeout(mapToastTimer);
+    mapToastTimer = setTimeout(() => {
+      mapToast.classList.remove("visible");
+      setTimeout(() => { mapToast.hidden = true; }, 240);
+    }, 1600);
+  }
+
+  function updateAnchorSizeUI() {
+    const cfg = ANCHOR_SIZE_CONFIGS[anchorSizeLevel] || ANCHOR_SIZE_CONFIGS[0];
+    const isStandard = anchorSizeLevel === 0;
+    const isLarge = anchorSizeLevel === 1;
+    const isXl = anchorSizeLevel === 2;
+
+    const nextCfg = ANCHOR_SIZE_CONFIGS[(anchorSizeLevel + 1) % ANCHOR_SIZE_CONFIGS.length];
+    const tip = `Tamaño de texto de referencias: ${cfg.label} (clic para cambiar a ${nextCfg.shortLabel || nextCfg.label})`;
+
+    if (anchorSizeBtn) {
+      anchorSizeBtn.title = tip;
+      anchorSizeBtn.setAttribute("aria-label", tip);
+      anchorSizeBtn.classList.toggle("active", !isStandard);
+      anchorSizeBtn.classList.toggle("is-large", isLarge);
+      anchorSizeBtn.classList.toggle("is-xl", isXl);
+    }
+    if (anchorSizeBadge) {
+      anchorSizeBadge.textContent = cfg.badge;
+    }
+
+    const actualFontSize = (window.innerWidth <= 520) ? cfg.fontSizeMobile : cfg.fontSize;
+    document.documentElement.style.setProperty("--anchor-font-size", actualFontSize);
+    document.documentElement.style.setProperty("--anchor-stroke-width", cfg.strokeWidth);
+  }
+
+  function cycleAnchorSize(showNotification = true) {
+    anchorSizeLevel = (anchorSizeLevel + 1) % ANCHOR_SIZE_CONFIGS.length;
+    try {
+      localStorage.setItem(LS_ANCHOR_SIZE, String(anchorSizeLevel));
+    } catch (_) {}
+    updateAnchorSizeUI();
+    renderAnchors();
+    if (showNotification) {
+      const cfg = ANCHOR_SIZE_CONFIGS[anchorSizeLevel];
+      showMapToast(`Texto de referencias: ${cfg.label}`);
+    }
+  }
+
+  anchorSizeBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    cycleAnchorSize(true);
+  });
+
   function renderAnchors() {
     clearLayer(gAnchors);
-    if (isHardMode() || !anchorsList || !projection) return;
+    if (!anchorsList || !projection) return;
 
     const { W, H } = svgSize();
     const isMobile = W <= 520;
-    const charWidth = isMobile ? 5.1 : 5.8;
-    const labelHeight = isMobile ? 12 : 14;
+    const sizeCfg = ANCHOR_SIZE_CONFIGS[anchorSizeLevel] || ANCHOR_SIZE_CONFIGS[0];
+    const charWidth = isMobile ? sizeCfg.charWidthMobile : sizeCfg.charWidthDesktop;
+    const labelHeight = isMobile ? sizeCfg.labelHeightMobile : sizeCfg.labelHeightDesktop;
+    const fontSize = isMobile ? sizeCfg.fontSizeMobile : sizeCfg.fontSize;
+    const dotR = isMobile ? sizeCfg.dotRMobile : sizeCfg.dotR;
 
     const currentMeta = currentLineMeta();
     const currentLid = currentMeta ? (currentMeta.id || "").toLowerCase() : "";
@@ -500,23 +700,23 @@
         .attr("class", "anchor-dot")
         .attr("cx", x)
         .attr("cy", y)
-        .attr("r", isMobile ? 2.8 : 3.2);
+        .attr("r", dotR);
 
       circle.append("title").text(a.name);
 
       const name = a.name.trim();
       const approxW = name.length * charWidth + 8;
 
-      // 4 posiciones candidatas (Derecha, Izquierda, Arriba, Abajo)
+      // 4 posiciones candidatas (Derecha, Izquierda, Arriba, Abajo) adaptadas a la escala del texto
       const candRight = {
         x0: x + 4, y0: y - labelHeight * 0.7,
         x1: x + 4 + approxW, y1: y + labelHeight * 0.3,
-        textX: x + 5, textY: y + 3, anchor: "start"
+        textX: x + 5, textY: y + Math.round(3 * sizeCfg.scale), anchor: "start"
       };
       const candLeft = {
         x0: x - 4 - approxW, y0: y - labelHeight * 0.7,
         x1: x - 4, y1: y + labelHeight * 0.3,
-        textX: x - 5, textY: y + 3, anchor: "end"
+        textX: x - 5, textY: y + Math.round(3 * sizeCfg.scale), anchor: "end"
       };
       const candTop = {
         x0: x - approxW / 2, y0: y - labelHeight - 4,
@@ -526,7 +726,7 @@
       const candBottom = {
         x0: x - approxW / 2, y0: y + 4,
         x1: x + approxW / 2, y1: y + labelHeight + 4,
-        textX: x, textY: y + 13, anchor: "middle"
+        textX: x, textY: y + Math.round(13 * sizeCfg.scale), anchor: "middle"
       };
 
       const candidates = x > W * 0.62
@@ -551,6 +751,8 @@
           .attr("x", chosen.textX)
           .attr("y", chosen.textY)
           .attr("text-anchor", chosen.anchor)
+          .style("font-size", fontSize)
+          .style("stroke-width", sizeCfg.strokeWidth)
           .text(name);
       }
     }
@@ -558,26 +760,44 @@
 
   function updateDifficultyUI() {
     const hard = isHardMode();
-    document.body.dataset.difficulty = hard ? "hard" : "normal";
-    themeColorMeta?.setAttribute("content", hard ? "#f2f5ef" : "#00833e");
-    anchorsToggle.setAttribute("aria-pressed", String(hard));
-    anchorsToggle.classList.toggle("active", hard);
+    document.body.dataset.difficulty = hard ? "hard" : "facil";
+    themeColorMeta?.setAttribute("content", "#f2f5ef");
+
+    const diffGroup = document.getElementById("difficulty-toggle-group");
+    diffGroup?.classList.add("is-locked");
+
+    if (modeFacilBtn) {
+      modeFacilBtn.classList.toggle("active", !hard);
+      modeFacilBtn.setAttribute("aria-pressed", String(!hard));
+      modeFacilBtn.disabled = true;
+      modeFacilBtn.title = !hard
+        ? "Modo fácil activo (Fijado durante la prueba)"
+        : "Modo fácil (Bloqueado. Para cambiar de nivel presiona Reiniciar)";
+    }
+    if (modeDificilBtn) {
+      modeDificilBtn.classList.toggle("active", hard);
+      modeDificilBtn.setAttribute("aria-pressed", String(hard));
+      modeDificilBtn.disabled = true;
+      modeDificilBtn.title = hard
+        ? "Modo difícil activo (Fijado durante la prueba)"
+        : "Modo difícil (Bloqueado. Para cambiar de nivel presiona Reiniciar)";
+    }
+    if (anchorsToggle && anchorsToggle !== modeDificilBtn) {
+      anchorsToggle.setAttribute("aria-pressed", String(hard));
+      anchorsToggle.classList.toggle("active", hard);
+      anchorsToggle.disabled = true;
+    }
+
     revealHardLabel.hidden = !hard;
     shareHardSeal.hidden = !hard;
 
     if (pistaBtn) {
-      pistaBtn.disabled = hard;
-      if (hard) {
-        setPistaVisible(false);
-        if (pistaBtnText) pistaBtnText.textContent = "Sin pistas";
-        pistaBtn.title = "Pistas desactivadas en Modo Difícil";
-      } else {
-        const isHidden = drawPromptHint ? drawPromptHint.hasAttribute("hidden") : true;
-        if (pistaBtnText && isHidden) {
-          pistaBtnText.textContent = "Pista";
-        }
-        pistaBtn.title = "Revelar pista geográfica";
+      pistaBtn.disabled = false;
+      const isHidden = drawPromptHint ? drawPromptHint.hasAttribute("hidden") : true;
+      if (pistaBtnText && isHidden) {
+        pistaBtnText.textContent = "Pista";
       }
+      pistaBtn.title = "Revelar pista geográfica";
     }
   }
 
@@ -840,12 +1060,20 @@
   borrarBtn.addEventListener("click", borrar);
 
   // Modos de Dificultad
+  // Modos de Dificultad (Fijados desde el inicio en el modal de bienvenida)
   let pendingDifficulty = null;
+
+  function setModeTogglesDisabled(disabled) {
+    if (modeFacilBtn) modeFacilBtn.disabled = true;
+    if (modeDificilBtn) modeDificilBtn.disabled = true;
+    if (anchorsToggle) anchorsToggle.disabled = true;
+  }
 
   function openConfirmModeModal(targetDiff) {
     pendingDifficulty = targetDiff;
-    const label = targetDiff === "hard" ? "Modo Difícil (a ciegas)" : "Modo Normal (con referencias)";
-    confirmModeBody.innerHTML = `Cambiar a <strong>${label}</strong> reiniciará tu progreso actual para mantener el juego justo.`;
+    const isTargetHard = targetDiff === "hard" || targetDiff === "dificil";
+    const label = isTargetHard ? "Modo Difícil (sin polígonos guía)" : "Modo Fácil (con polígonos guía punteados)";
+    confirmModeBody.innerHTML = `El nivel fue seleccionado al inicio y está <strong>bloqueado</strong> durante la prueba. Para cambiar a <strong>${label}</strong> es necesario reiniciar el croquis.<br><br>¿Deseas reiniciar ahora?`;
     confirmModeModal.hidden = false;
     requestAnimationFrame(() => confirmModeModal.classList.add("visible"));
   }
@@ -855,32 +1083,35 @@
     setTimeout(() => { confirmModeModal.hidden = true; pendingDifficulty = null; }, 240);
   }
 
-  function applyDifficultyChange(targetDiff) {
-    state = freshRunState(targetDiff);
-    saveRunState();
-    startLineTurn();
+  function handleModeSelect(targetDiff) {
+    if (revealActive) return;
+    const currentDiff = isHardMode() ? "hard" : "facil";
+    const wantedDiff = (targetDiff === "hard" || targetDiff === "dificil") ? "hard" : "facil";
+    if (wantedDiff === currentDiff) return;
+    openConfirmModeModal(wantedDiff);
   }
 
-  anchorsToggle.addEventListener("click", () => {
-    if (revealActive) return;
-    const targetDiff = isHardMode() ? "normal" : "hard";
-    if (drawnCount() === 0 && currentStrokePoints.length === 0) {
-      applyDifficultyChange(targetDiff);
-    } else {
-      openConfirmModeModal(targetDiff);
-    }
+  const difficultyToggleGroup = document.getElementById("difficulty-toggle-group");
+  difficultyToggleGroup?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const currentDiff = isHardMode() ? "hard" : "facil";
+    const wantedDiff = currentDiff === "hard" ? "facil" : "hard";
+    handleModeSelect(wantedDiff);
   });
 
   confirmModeCancelBtn.addEventListener("click", closeConfirmModeModal);
   confirmModeSwitchBtn.addEventListener("click", () => {
     const diff = pendingDifficulty;
     closeConfirmModeModal();
-    if (diff) applyDifficultyChange(diff);
+    restartGame();
+    if (diff) {
+      setWelcomeDifficulty(diff);
+    }
   });
 
   // Reiniciar Juego y Reintentar Elemento
   function restartGame() {
-    const diff = state ? state.difficulty : "normal";
+    const diff = state ? state.difficulty : "hard";
     clearRunState();
     state = freshRunState(diff, "");
     currentStrokePoints = [];
@@ -893,10 +1124,10 @@
     finalSheet.hidden = true;
     revealBanner.classList.remove("visible", "is-minimized");
     revealActive = false;
-    anchorsToggle.disabled = false;
     clearLayer(gUserdraw);
     startLineTurn();
     if (playerNameInput) playerNameInput.value = "";
+    setWelcomeDifficulty(diff);
     openWelcomeModal();
   }
 
@@ -911,11 +1142,7 @@
   }
 
   reiniciarBtn?.addEventListener("click", () => {
-    if (drawnCount() === 0 && currentStrokePoints.length === 0 && !revealActive) {
-      restartGame();
-    } else {
-      openConfirmResetModal();
-    }
+    openConfirmResetModal();
   });
 
   confirmResetCancelBtn?.addEventListener("click", closeConfirmResetModal);
@@ -925,6 +1152,21 @@
   resetAllBtn?.addEventListener("click", () => {
     closeConfirmResetModal();
     restartGame();
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && confirmResetModal && !confirmResetModal.hidden) {
+      closeConfirmResetModal();
+      return;
+    }
+    // Tecla 'T' para alternar tamaño de texto de referencias
+    if ((e.key === "t" || e.key === "T") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : "";
+      if (activeTag !== "input" && activeTag !== "textarea") {
+        e.preventDefault();
+        cycleAnchorSize(true);
+      }
+    }
   });
 
   // Flujo de Turnos
@@ -949,7 +1191,7 @@
       return;
     }
 
-    lineMedallion.textContent = meta.badge || meta.id.slice(0, 3).toUpperCase();
+    lineMedallion.textContent = meta.badge || meta.abreviatura || meta.abrev || meta.id.slice(0, 3).toUpperCase();
     lineMedallion.style.setProperty("--line-color", meta.color);
     const hintStr = getPistaText(meta);
     if (drawPromptHintText) drawPromptHintText.textContent = `Pista: ${hintStr}`;
@@ -963,7 +1205,7 @@
     showDrawPrompt(activePrompt);
 
     updateDifficultyUI();
-    anchorsToggle.disabled = false;
+    setModeTogglesDisabled(false);
     renderProgressDots();
     verMapaBtn.disabled = drawnCount() === 0;
 
@@ -1014,7 +1256,7 @@
       revealActive = false;
       document.body.classList.remove("reveal-active");
       svg.style.cursor = "crosshair";
-      anchorsToggle.disabled = false;
+      setModeTogglesDisabled(false);
       advanceTurn();
     };
     revealNextBtn.onclick = advance;
@@ -1027,7 +1269,7 @@
     const pointsSnapshot = currentStrokePoints.slice();
     listoBtn.disabled = true;
     revealActive = true;
-    anchorsToggle.disabled = true;
+    setModeTogglesDisabled(true);
     updateBorrarState();
 
     const layer = layersMeta[lid];
@@ -1059,7 +1301,7 @@
         .catch((err) => {
           console.error("Error al calificar:", err);
           revealActive = false;
-          anchorsToggle.disabled = false;
+          setModeTogglesDisabled(false);
           updateListoState();
           updateBorrarState();
         });
@@ -1180,7 +1422,7 @@
       const med = document.createElement("div");
       med.className = "medallion sm" + (drawn ? "" : " undrawn");
       med.style.setProperty("--line-color", meta.color);
-      med.textContent = meta.badge || lid.slice(0, 3).toUpperCase();
+      med.textContent = meta.badge || meta.abreviatura || meta.abrev || lid.slice(0, 3).toUpperCase();
       med.title = `${meta.name}: ${drawn ? score + ' pts' : 'Sin trazar'}`;
       shareMedallionsEl.appendChild(med);
     }
@@ -1200,7 +1442,7 @@
       const med = document.createElement("div");
       med.className = "medallion sm";
       med.style.setProperty("--line-color", meta.color);
-      med.textContent = meta.badge || lid.slice(0, 3).toUpperCase();
+      med.textContent = meta.badge || meta.abreviatura || meta.abrev || lid.slice(0, 3).toUpperCase();
 
       const nameBox = document.createElement("div");
       nameBox.className = "line-label";
@@ -1439,8 +1681,8 @@
     const ctx = canvas.getContext("2d");
     const hard = isHardMode();
 
-    // Fondo
-    ctx.fillStyle = hard ? "#f2f5ef" : "#f6f8f5";
+    // Fondo (Mismo tono cálido de lienzo en ambos modos)
+    ctx.fillStyle = "#f2f5ef";
     ctx.fillRect(0, 0, SHARE_W, SHARE_H);
 
     // Marco exterior institucional
@@ -1595,7 +1837,7 @@
       ctx.font = `800 15px ${FONT_FAMILY}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      const badgeText = (meta.badge || lid.slice(0, 3)).toUpperCase();
+      const badgeText = (meta.badge || meta.abreviatura || meta.abrev || lid.slice(0, 3)).toUpperCase();
       ctx.fillText(badgeText, cx, cy + 0.5);
 
       // Nombre de la capa
@@ -1620,9 +1862,9 @@
     }
 
     // Mapa Canvas
-    ctx.fillStyle = hard ? "#fffdf8" : "#ffffff";
+    ctx.fillStyle = "#f2f5ef";
     ctx.fillRect(mapLeft, mapTop, mapW, mapH);
-    ctx.strokeStyle = "rgba(70, 50, 40, 0.15)";
+    ctx.strokeStyle = "rgba(75, 79, 84, 0.22)";
     ctx.lineWidth = 2;
     ctx.strokeRect(mapLeft, mapTop, mapW, mapH);
 
@@ -1646,14 +1888,33 @@
       ctx.clip();
 
       if (valleGeo) {
+        normalizeGeoJSONWinding(valleGeo);
         const geoPath = d3.geoPath(proj, ctx);
+        ctx.save();
+        ctx.setLineDash([5, 4]);
         ctx.beginPath();
         geoPath(valleGeo);
-        ctx.fillStyle = hard ? "rgba(90, 60, 40, 0.06)" : "rgba(70, 50, 40, 0.04)";
+        ctx.fillStyle = "rgba(70, 50, 40, 0.055)";
         ctx.fill();
-        ctx.strokeStyle = "rgba(70, 50, 40, 0.15)";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(70, 50, 40, 0.22)";
+        ctx.lineWidth = 1.4;
         ctx.stroke();
+        ctx.restore();
+      }
+
+      if (!hard && polMoreliaGeo) {
+        normalizeGeoJSONWinding(polMoreliaGeo);
+        const geoPath = d3.geoPath(proj, ctx);
+        ctx.save();
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        geoPath(polMoreliaGeo);
+        ctx.fillStyle = "rgba(70, 72, 75, 0.03)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(55, 58, 62, 0.60)";
+        ctx.lineWidth = 1.45;
+        ctx.stroke();
+        ctx.restore();
       }
 
       ctx.lineCap = "round";
@@ -1685,6 +1946,74 @@
       ctx.fillText("DIFÍCIL", 0, 1);
       ctx.restore();
     }
+
+    // Rosa de los vientos / Norte cartográfico en la tarjeta compartible
+    ctx.save();
+    const compassX = mapLeft + 44;
+    const compassY = mapTop + 44;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+    ctx.strokeStyle = "rgba(70, 50, 40, 0.18)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(compassX, compassY, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.save();
+    ctx.setLineDash([2, 2]);
+    ctx.strokeStyle = "rgba(196, 91, 67, 0.35)";
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.arc(compassX, compassY, 16, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = "#c45b43";
+    ctx.font = `800 10.5px ${FONT_FAMILY}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("N", compassX, compassY - 11);
+
+    ctx.beginPath();
+    ctx.moveTo(compassX, compassY - 10);
+    ctx.lineTo(compassX - 4.5, compassY + 1);
+    ctx.lineTo(compassX, compassY - 1.5);
+    ctx.closePath();
+    ctx.fillStyle = "#c45b43";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(compassX, compassY - 10);
+    ctx.lineTo(compassX + 4.5, compassY + 1);
+    ctx.lineTo(compassX, compassY - 1.5);
+    ctx.closePath();
+    ctx.fillStyle = "#96341f";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(compassX, compassY + 11);
+    ctx.lineTo(compassX - 4.5, compassY + 1);
+    ctx.lineTo(compassX, compassY - 1.5);
+    ctx.closePath();
+    ctx.fillStyle = "#9fa89b";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(compassX, compassY + 11);
+    ctx.lineTo(compassX + 4.5, compassY + 1);
+    ctx.lineTo(compassX, compassY - 1.5);
+    ctx.closePath();
+    ctx.fillStyle = "#bcc5b8";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(compassX, compassY, 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.strokeStyle = "#96341f";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
 
     // Hero Card de Calificación Oficial (Sticker a la izquierda y Puntaje/Veredicto a la derecha)
     const heroCardX = 60;
@@ -1845,7 +2174,7 @@
     a.href = url;
     const pName = (state && state.playerName ? state.playerName : "").trim();
     const nameSlug = pName ? `-${pName.toLowerCase().replace(/[^a-z0-9]/g, '_')}` : '';
-    a.download = `croquis-mental-morelia${nameSlug}-${isHardMode() ? 'dificil' : 'normal'}.png`;
+    a.download = `croquis-mental-morelia${nameSlug}-${isHardMode() ? 'dificil' : 'facil'}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1857,10 +2186,10 @@
     const hard = isHardMode();
     const pName = (state && state.playerName ? state.playerName : "").trim();
     const text = pName
-      ? `¡Mira mi croquis mental de Morelia trazado de memoria por ${pName}! Saqué ${score}/100 en Mi Croquis Mental de Morelia (${hard ? 'Modo Difícil' : 'Modo Normal'})!`
+      ? `¡Mira mi croquis mental de Morelia trazado de memoria por ${pName}! Saqué ${score}/100 en Mi Croquis Mental de Morelia (${hard ? 'Modo Difícil' : 'Modo Fácil'})!`
       : (hard
         ? `Dibujé los ríos y ejes de Morelia en modo difícil y saqué ${score}/100 en Mi Croquis Mental de Morelia!`
-        : `Dibujé los monumentos y ríos de Morelia de memoria y saqué ${score}/100 en Mi Croquis Mental de Morelia!`);
+        : `Dibujé los monumentos y ríos de Morelia en modo fácil y saqué ${score}/100 en Mi Croquis Mental de Morelia!`);
 
     const blob = await exportCanvasBlob();
     if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "croquis-mental-morelia.png", { type: "image/png" })] })) {
@@ -1881,7 +2210,27 @@
     }
   });
 
-  // Pantalla Previa de Bienvenida (Captura de Nombre Inicial)
+  // Pantalla Previa de Bienvenida (Captura de Nombre y Modo de Dificultad Inicial)
+  const welcomeModeFacilBtn = document.getElementById("welcome-mode-facil-btn");
+  const welcomeModeDificilBtn = document.getElementById("welcome-mode-dificil-btn");
+  let selectedWelcomeDifficulty = "hard";
+
+  function setWelcomeDifficulty(diff) {
+    selectedWelcomeDifficulty = (diff === "facil") ? "facil" : "hard";
+    const isHard = selectedWelcomeDifficulty === "hard";
+    if (welcomeModeFacilBtn) {
+      welcomeModeFacilBtn.classList.toggle("active", !isHard);
+      welcomeModeFacilBtn.setAttribute("aria-checked", String(!isHard));
+    }
+    if (welcomeModeDificilBtn) {
+      welcomeModeDificilBtn.classList.toggle("active", isHard);
+      welcomeModeDificilBtn.setAttribute("aria-checked", String(isHard));
+    }
+  }
+
+  welcomeModeFacilBtn?.addEventListener("click", () => setWelcomeDifficulty("facil"));
+  welcomeModeDificilBtn?.addEventListener("click", () => setWelcomeDifficulty("hard"));
+
   function updateNameValidation() {
     const val = playerNameInput ? playerNameInput.value.trim() : "";
     const nameGroup = document.getElementById("welcome-name-group");
@@ -1913,6 +2262,7 @@
     if (playerNameInput) {
       playerNameInput.value = (state && state.playerName) || "";
     }
+    setWelcomeDifficulty((state && state.difficulty) || "hard");
     updateNameValidation();
     if (welcomeModal) {
       welcomeModal.hidden = false;
@@ -1940,8 +2290,14 @@
       return false;
     }
 
-    if (state) state.playerName = val;
+    const normalizedDiff = (selectedWelcomeDifficulty === "facil") ? "facil" : "hard";
+    if (state) {
+      state.playerName = val;
+      state.difficulty = normalizedDiff;
+    }
     saveRunState();
+    updateDifficultyUI();
+    applyProjectionAndRender();
 
     if (welcomeModal) {
       welcomeModal.classList.remove("visible");
@@ -2094,6 +2450,7 @@
       let layers = [];
       let anchors = [];
       let valle = null;
+      let polMorelia = null;
 
       // 1. PRIORIDAD EN SERVIDOR (HTTP/HTTPS): Cargar directamente data/lineas_morelia.geojson sin caché para reflejar cambios en tiempo real
       let loadedLive = false;
@@ -2105,7 +2462,7 @@
           const cleanBase = basePath.endsWith('/') ? basePath : (basePath + '/');
           const cacheBust = `?t=${Date.now()}`;
 
-          const [layersGeo, anchorsGeo, valleData] = await Promise.all([
+          const [layersGeo, anchorsGeo, valleData, polMoreliaData] = await Promise.all([
             fetch(cleanBase + "data/lineas_morelia.geojson" + cacheBust, { cache: "no-store" }).then(r => {
               if (!r.ok) throw new Error("Status " + r.status);
               return r.json();
@@ -2114,27 +2471,31 @@
             fetch(cleanBase + "data/cd_morelia_pol.geojson" + cacheBust, { cache: "no-store" })
               .then(r => r.json())
               .catch(() => fetch(cleanBase + "data/morelia_valle.geojson" + cacheBust, { cache: "no-store" }).then(r => r.json()))
-              .catch(() => null)
+              .catch(() => null),
+            fetch(cleanBase + "data/pol_morelia.geojson" + cacheBust, { cache: "no-store" }).then(r => r.json()).catch(() => null)
           ]);
 
           if (layersGeo && typeof MoreliaScoring !== "undefined") {
             layers = MoreliaScoring.parseMoreliaLayers(layersGeo);
             if (anchorsGeo) anchors = MoreliaScoring.parseMoreliaAnchors(anchorsGeo);
             valle = valleData;
+            polMorelia = polMoreliaData;
             loadedLive = true;
           }
         } catch (fetchErr) {
           // Intentar API backend FastAPI /api/layers
           try {
-            const [apiLayers, apiAnchors, apiValle] = await Promise.all([
+            const [apiLayers, apiAnchors, apiValle, apiPolMorelia] = await Promise.all([
               fetch("/api/layers?t=" + Date.now()).then(r => r.json()),
               fetch("/api/anchors?t=" + Date.now()).then(r => r.json()).catch(() => []),
-              fetch("/api/valle?t=" + Date.now()).then(r => r.json()).catch(() => null)
+              fetch("/api/valle?t=" + Date.now()).then(r => r.json()).catch(() => null),
+              fetch("/api/pol_morelia?t=" + Date.now()).then(r => r.json()).catch(() => null)
             ]);
             if (apiLayers && apiLayers.length > 0) {
               layers = apiLayers;
               anchors = apiAnchors || [];
               valle = apiValle;
+              polMorelia = apiPolMorelia;
               loadedLive = true;
             }
           } catch (_) {}
@@ -2148,6 +2509,13 @@
           anchors = MoreliaScoring.parseMoreliaAnchors(window.MORELIA_DATA.anchors);
         }
         valle = window.MORELIA_DATA.valle;
+        polMorelia = window.MORELIA_DATA.pol_morelia;
+      }
+
+      if (!polMorelia) {
+        try {
+          polMorelia = await fetch("./data/pol_morelia.geojson").then(r => r.json()).catch(() => null);
+        } catch (_) {}
       }
 
       layersMeta = {};
@@ -2158,15 +2526,17 @@
       }
       anchorsList = anchors;
       valleGeo = valle;
+      polMoreliaGeo = polMorelia;
 
       const saved = loadRunState();
       if (saved && saved.order.length === canonicalOrder.length) {
         state = saved;
       } else {
-        state = freshRunState();
+        state = freshRunState("hard");
       }
 
       initInstructionTabs();
+      updateAnchorSizeUI();
       if (state.finished) {
         showFinalSheet();
       } else {
@@ -2180,6 +2550,47 @@
       console.error("Error inicializando Croquis Morelia:", e);
     }
   }
+
+  // Sincronización en vivo con QGIS: detecta si se guardó lineas_morelia.geojson al cambiar a la ventana
+  let lastGeoJsonModified = null;
+  async function checkForQgisUpdates() {
+    if (!window.location.protocol.startsWith("http")) return;
+    try {
+      const basePath = window.location.pathname.endsWith('.html')
+        ? window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)
+        : window.location.pathname;
+      const cleanBase = basePath.endsWith('/') ? basePath : (basePath + '/');
+      const res = await fetch(cleanBase + "data/lineas_morelia.geojson?_h=" + Date.now(), { method: "HEAD" });
+      if (!res.ok) return;
+      const modified = res.headers.get("Last-Modified") || res.headers.get("ETag");
+      if (!modified) return;
+      if (lastGeoJsonModified && lastGeoJsonModified !== modified) {
+        lastGeoJsonModified = modified;
+        const freshGeo = await fetch(cleanBase + "data/lineas_morelia.geojson?t=" + Date.now(), { cache: "no-store" }).then(r => r.json());
+        if (freshGeo && typeof MoreliaScoring !== "undefined") {
+          const freshLayers = MoreliaScoring.parseMoreliaLayers(freshGeo);
+          freshLayers.forEach(fl => {
+            if (layersMeta[fl.id]) {
+              Object.assign(layersMeta[fl.id], fl);
+            }
+          });
+          const curr = currentLineMeta();
+          if (curr) {
+            if (lineMedallion) lineMedallion.textContent = curr.badge || curr.abreviatura || curr.id.slice(0, 3).toUpperCase();
+            const hintStr = getPistaText(curr);
+            if (drawPromptHintText) drawPromptHintText.textContent = `Pista: ${hintStr}`;
+            if (pistaBtn) pistaBtn.style.display = hintStr ? "" : "none";
+          }
+          console.log("✓ Sincronizado en tiempo real con lineas_morelia.geojson editado desde QGIS");
+        }
+      } else {
+        lastGeoJsonModified = modified;
+      }
+    } catch (_) {}
+  }
+
+  window.addEventListener("focus", checkForQgisUpdates);
+  window.recargarCapasQgis = checkForQgisUpdates;
 
   init();
 })();

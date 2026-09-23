@@ -94,6 +94,29 @@
     return coords;
   }
 
+  function getAttr(props, ...candidates) {
+    if (!props || typeof props !== 'object') return '';
+    for (const key of candidates) {
+      if (props[key] !== undefined && props[key] !== null) {
+        const val = String(props[key]).trim();
+        if (val) return val;
+      }
+    }
+    // Búsqueda insensible a mayúsculas/minúsculas para campos creados o editados en QGIS
+    const lowerMap = {};
+    for (const k of Object.keys(props)) {
+      lowerMap[k.toLowerCase()] = props[k];
+    }
+    for (const key of candidates) {
+      const lower = key.toLowerCase();
+      if (lowerMap[lower] !== undefined && lowerMap[lower] !== null) {
+        const val = String(lowerMap[lower]).trim();
+        if (val) return val;
+      }
+    }
+    return '';
+  }
+
   function parseMoreliaLayers(geojson) {
     if (!geojson || !Array.isArray(geojson.features)) return [];
     const layers = [];
@@ -104,27 +127,25 @@
       const coords = cleanCoords(feat.geometry);
       if (coords.length < 2) return;
 
-      const rawName = props.Nombre || props.nombre || props.Name || props.name || props.NAME || props.id || `Capa ${idx + 1}`;
+      const rawName = getAttr(props, 'Nombre', 'nombre', 'Name', 'name', 'titulo', 'etiqueta', 'label') || `Capa ${idx + 1}`;
       const name = String(rawName).trim();
-      const rawId = props.id || props.ID || slugify(name) || `capa-${idx + 1}`;
+      const rawId = getAttr(props, 'id', 'ID', 'slug', 'capa_id') || slugify(name) || `capa-${idx + 1}`;
       let layerId = slugify(rawId);
       if (seenIds.has(layerId)) layerId = `${layerId}-${idx + 1}`;
       seenIds.add(layerId);
 
       const lineLen = pathLengthMeters(coords);
-      let tolScale = Number(props.toleranceScale || props.TOLERANCESCALE);
+      let tolScale = Number(getAttr(props, 'toleranceScale', 'tolerancescale', 'tolerancia'));
       if (isNaN(tolScale) || tolScale <= 0) {
         tolScale = Math.round(Math.max(380.0, Math.min(1400.0, 240.0 + Math.sqrt(lineLen) * 6.0)));
       }
 
       const nLower = name.toLowerCase();
-      let category = String(props.category || props.CATEGORY || '').trim();
-      let kicker = String(
-        props.kicker || props.kiker ||
-        props.KICKER || props.KIKER ||
-        props.Kicker || props.Kiker || ''
-      ).trim();
-      let color = String(props.color || props.COLOR || '').trim();
+      let category = getAttr(props, 'category', 'categoria', 'tipo');
+      
+      // Pista editable directamente desde QGIS (kicker, pista, hint, ayuda, desc_corta)
+      let kicker = getAttr(props, 'kicker', 'kiker', 'pista', 'pistas', 'hint', 'ayuda', 'descripcion_corta', 'desc_corta');
+      let color = getAttr(props, 'color', 'colour', 'hex', 'stroke', 'line_color');
 
       if (!category || !color) {
         if (nLower.includes('chiquito')) {
@@ -163,9 +184,10 @@
         }
       }
 
-      const textColor = String(props.textColor || props.TEXTCOLOR || color);
+      const textColor = getAttr(props, 'textColor', 'textcolor', 'color_texto', 'colortexto') || color;
 
-      let badge = String(props.badge || props.BADGE || '').trim();
+      // Abreviatura editable directamente desde QGIS (badge, abrev, abreviatura, sigla, siglas, etc.)
+      let badge = getAttr(props, 'badge', 'abrev', 'abreviatura', 'sigla', 'siglas', 'acronimo', 'codigo', 'tag');
       if (!badge) {
         const cleanWords = name.split(/[\s\.\-]+/).filter(w => !['el', 'la', 'los', 'las', 'de', 'del', 'av', 'ave', 'avenida', 'calle', 'calzada', 'boulevard', 'blvd', 'rio', 'río', 'paseo'].includes(w.toLowerCase()));
         if (cleanWords.length >= 2) {
@@ -178,16 +200,16 @@
       }
 
       const articulated = articularNombre(name);
-      // La pista es EXCLUSIVAMENTE el kicker/kiker definido en lineas_morelia.geojson sin sintetizar pistas inventadas
-      let hint = String(props.hint || props.HINT || kicker).trim();
+      // La pista es EXCLUSIVAMENTE lo que el usuario define en lineas_morelia.geojson (kicker/pista)
+      let hint = kicker;
 
-      let prompt = String(props.prompt || props.PROMPT || '').trim();
+      let prompt = getAttr(props, 'prompt', 'mision', 'instruccion');
       if (!prompt) prompt = `Traza de memoria la ubicación, forma y extensión ${articulated}`;
 
-      let desc = String(props.description || props.DESCRIPTION || '').trim();
+      let desc = getAttr(props, 'description', 'descripcion', 'desc');
       if (!desc) desc = `Traza de memoria la ubicación, forma y extensión ${articulated} sobre la mancha urbana de Morelia.`;
 
-      const diffAdvice = String(props.difficultyAdvice || props.DIFFICULTYADVICE || `Traza de memoria la ubicación, forma y extensión ${articulated} sin referencias.`);
+      const diffAdvice = getAttr(props, 'difficultyAdvice', 'dificultad_consejo') || `Traza de memoria la ubicación, forma y extensión ${articulated} sin referencias.`;
 
       let bbox = feat.bbox || props.bbox;
       if (!bbox || !Array.isArray(bbox) || bbox.length < 4) {
@@ -199,8 +221,11 @@
         name,
         articulatedName: articulated,
         kicker,
-        badge,
         hint,
+        pista: hint,
+        badge,
+        abrev: badge,
+        abreviatura: badge,
         prompt,
         category,
         color,

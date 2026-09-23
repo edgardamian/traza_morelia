@@ -28,7 +28,7 @@ app.add_middleware(
 async def add_no_cache_headers(request: Request, call_next):
     response = await call_next(request)
     p = request.url.path
-    if p.endswith((".geojson", ".json", ".js", ".css", ".html")) or p in ["/", "/api/layers", "/api/anchors", "/api/valle", "/api/stats"]:
+    if p.endswith((".geojson", ".json", ".js", ".css", ".html")) or p in ["/", "/api/layers", "/api/anchors", "/api/valle", "/api/pol_morelia", "/api/stats"]:
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
@@ -170,6 +170,7 @@ def sync_embedded_morelia_data():
         lineas_path = os.path.join(DATA_DIR, "lineas_morelia.geojson")
         anchors_path = os.path.join(DATA_DIR, "morelia_anchors.geojson")
         valle_path = os.path.join(DATA_DIR, "cd_morelia_pol.geojson")
+        pol_morelia_path = os.path.join(DATA_DIR, "pol_morelia.geojson")
         if not os.path.exists(valle_path):
             valle_path = os.path.join(DATA_DIR, "morelia_valle.geojson")
         out_js = os.path.join(DATA_DIR, "morelia_data.js")
@@ -178,9 +179,15 @@ def sync_embedded_morelia_data():
             return
 
         lineas_mtime = os.path.getmtime(lineas_path)
+        pol_mtime = os.path.getmtime(pol_morelia_path) if os.path.exists(pol_morelia_path) else 0
         js_mtime = os.path.getmtime(out_js) if os.path.exists(out_js) else 0
-        if js_mtime >= lineas_mtime and js_mtime > 0:
-            return
+        if js_mtime >= max(lineas_mtime, pol_mtime) and js_mtime > 0:
+            try:
+                with open(out_js, "r", encoding="utf-8") as f:
+                    if '"pol_morelia"' in f.read(500):
+                        return
+            except Exception:
+                pass
 
         with open(lineas_path, "r", encoding="utf-8") as f:
             lineas = json.load(f)
@@ -192,13 +199,17 @@ def sync_embedded_morelia_data():
         if os.path.exists(valle_path):
             with open(valle_path, "r", encoding="utf-8") as f:
                 valle = json.load(f)
+        pol_morelia = {}
+        if os.path.exists(pol_morelia_path):
+            with open(pol_morelia_path, "r", encoding="utf-8") as f:
+                pol_morelia = json.load(f)
 
         js_content = (
             "/**\n"
             " * DATOS CARTOGRÁFICOS DE MORELIA (EMBEDDED)\n"
-            " * Sincronizado automáticamente con lineas_morelia.geojson\n"
+            " * Sincronizado automáticamente con lineas_morelia.geojson y pol_morelia.geojson\n"
             " */\n"
-            "window.MORELIA_DATA = " + json.dumps({"lineas": lineas, "anchors": anchors, "valle": valle}, ensure_ascii=False) + ";\n"
+            "window.MORELIA_DATA = " + json.dumps({"lineas": lineas, "anchors": anchors, "valle": valle, "pol_morelia": pol_morelia}, ensure_ascii=False) + ";\n"
         )
         with open(out_js, "w", encoding="utf-8") as f:
             f.write(js_content)
@@ -215,6 +226,23 @@ def load_layers_data() -> List[Dict[str, Any]]:
         geojson_path = os.path.join(DATA_DIR, "morelia_layers.geojson")
     if not os.path.exists(geojson_path):
         return []
+
+    def get_attr(props_dict: dict, *candidates: str) -> str:
+        if not isinstance(props_dict, dict):
+            return ""
+        for k in candidates:
+            if k in props_dict and props_dict[k] is not None:
+                val = str(props_dict[k]).strip()
+                if val:
+                    return val
+        lower_map = {str(k).lower(): v for k, v in props_dict.items() if v is not None}
+        for k in candidates:
+            v = lower_map.get(k.lower())
+            if v is not None:
+                val_str = str(v).strip()
+                if val_str:
+                    return val_str
+        return ""
 
     try:
         with open(geojson_path, "r", encoding="utf-8") as f:
@@ -239,12 +267,10 @@ def load_layers_data() -> List[Dict[str, Any]]:
                     continue
 
                 # 1. Nombre y Slug ID
-                raw_name = (props.get("Nombre") or props.get("nombre") or 
-                            props.get("Name") or props.get("name") or 
-                            props.get("NAME") or props.get("id") or f"Capa {idx+1}")
+                raw_name = get_attr(props, "Nombre", "nombre", "Name", "name", "titulo", "etiqueta", "label") or f"Capa {idx+1}"
                 name = str(raw_name).strip()
                 
-                raw_id = props.get("id") or props.get("ID") or slugify(name) or f"capa-{idx+1}"
+                raw_id = get_attr(props, "id", "ID", "slug", "capa_id") or slugify(name) or f"capa-{idx+1}"
                 layer_id = slugify(raw_id)
                 if layer_id in seen_ids:
                     layer_id = f"{layer_id}-{idx+1}"
@@ -253,19 +279,15 @@ def load_layers_data() -> List[Dict[str, Any]]:
                 # 2. Longitud y Tolerancia adaptativa (generosa para memoria espacial)
                 line_len = path_length_meters(coords)
                 try:
-                    tol_scale = float(props.get("toleranceScale") or props.get("TOLERANCESCALE"))
+                    tol_scale = float(get_attr(props, "toleranceScale", "tolerancescale", "tolerancia"))
                 except (ValueError, TypeError):
                     tol_scale = float(round(max(380.0, min(1400.0, 240.0 + (line_len ** 0.5) * 6.0))))
 
-                # 3. Categoría, Kicker y Color inteligente
+                # 3. Categoría, Pista/Kicker y Color inteligente (editables en QGIS)
                 n_lower = name.lower()
-                category = str(props.get("category") or props.get("CATEGORY") or "").strip()
-                kicker = str(
-                    props.get("kicker") or props.get("kiker") or 
-                    props.get("KICKER") or props.get("KIKER") or 
-                    props.get("Kicker") or props.get("Kiker") or ""
-                ).strip()
-                color = str(props.get("color") or props.get("COLOR") or "").strip()
+                category = get_attr(props, "category", "categoria", "tipo")
+                kicker = get_attr(props, "kicker", "kiker", "pista", "pistas", "hint", "ayuda", "descripcion_corta", "desc_corta")
+                color = get_attr(props, "color", "colour", "hex", "stroke", "line_color")
 
                 if not category or not color:
                     if any(w in n_lower for w in ["chiquito"]):
@@ -302,10 +324,10 @@ def load_layers_data() -> List[Dict[str, Any]]:
                         category = category or "eje"
                         color = color or LAYER_PALETTE[idx % len(LAYER_PALETTE)]
 
-                text_color = str(props.get("textColor") or props.get("TEXTCOLOR") or color)
+                text_color = get_attr(props, "textColor", "textcolor", "color_texto", "colortexto") or color
 
-                # 4. Badge abreviado
-                badge = str(props.get("badge") or props.get("BADGE") or "").strip()
+                # 4. Badge / Abreviatura (editable en QGIS con badge, abrev, abreviatura, sigla, etc.)
+                badge = get_attr(props, "badge", "abrev", "abreviatura", "sigla", "siglas", "acronimo", "codigo", "tag")
                 if not badge:
                     clean_words = [w for w in re.split(r'[\s\.\-]+', name) if w.lower() not in [
                         'el', 'la', 'los', 'las', 'de', 'del', 'av', 'ave', 'avenida', 'calle', 'calzada', 'boulevard', 'blvd', 'rio', 'río', 'paseo'
@@ -318,20 +340,20 @@ def load_layers_data() -> List[Dict[str, Any]]:
                     else:
                         badge = layer_id[:3].upper()
 
-                # 5. Articulación gramatical y Pista (estrictamente lo que el usuario define en kicker/kiker)
+                # 5. Articulación gramatical y Pista (estrictamente lo que el usuario define en QGIS)
                 articulated = articular_nombre(name)
-                hint = str(props.get("hint") or props.get("HINT") or kicker).strip()
+                hint = kicker
 
                 # 6. Instrucción directa (prompt / letrero de misión) y descripción
-                prompt = str(props.get("prompt") or props.get("PROMPT") or "").strip()
+                prompt = get_attr(props, "prompt", "mision", "instruccion")
                 if not prompt:
                     prompt = f"Traza de memoria la ubicación, forma y extensión {articulated}"
 
-                desc = str(props.get("description") or props.get("DESCRIPTION") or "").strip()
+                desc = get_attr(props, "description", "descripcion", "desc")
                 if not desc:
                     desc = f"Traza de memoria la ubicación, forma y extensión {articulated} sobre la mancha urbana de Morelia."
 
-                diff_advice = str(props.get("difficultyAdvice") or props.get("DIFFICULTYADVICE") or f"Traza de memoria la ubicación, forma y extensión {articulated} sin referencias.")
+                diff_advice = get_attr(props, "difficultyAdvice", "dificultad_consejo") or f"Traza de memoria la ubicación, forma y extensión {articulated} sin referencias."
 
                 # 7. Bounding Box
                 bbox = feat.get("bbox") or props.get("bbox")
@@ -343,8 +365,11 @@ def load_layers_data() -> List[Dict[str, Any]]:
                     "name": name,
                     "articulatedName": articulated,
                     "kicker": kicker,
-                    "badge": badge,
                     "hint": hint,
+                    "pista": hint,
+                    "badge": badge,
+                    "abrev": badge,
+                    "abreviatura": badge,
                     "prompt": prompt,
                     "category": category,
                     "color": color,
@@ -410,6 +435,18 @@ def load_valle_data() -> Dict[str, Any]:
     return {"type": "FeatureCollection", "name": "cd_morelia_pol", "features": []}
 
 
+def load_pol_morelia_data() -> Dict[str, Any]:
+    """Carga los 21 polígonos guía de apoyo para Modo Fácil (pol_morelia.geojson)."""
+    pol_path = os.path.join(DATA_DIR, "pol_morelia.geojson")
+    if os.path.exists(pol_path):
+        try:
+            with open(pol_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error al procesar pol_morelia.geojson: {e}")
+    return {"type": "FeatureCollection", "name": "pol_morelia", "features": []}
+
+
 class ScoreRequest(BaseModel):
     lineId: str
     points: List[List[float]]
@@ -445,6 +482,12 @@ def get_valle():
     return load_valle_data()
 
 
+@app.get("/api/pol_morelia")
+def get_pol_morelia():
+    """Entrega los 21 polígonos guía punteados para el Modo Fácil."""
+    return load_pol_morelia_data()
+
+
 @app.post("/api/score")
 def calculate_score(req: ScoreRequest):
     """Calcula la similitud espacial del trazo del usuario frente a la geometría real."""
@@ -464,8 +507,8 @@ def calculate_score(req: ScoreRequest):
 @app.get("/api/verdict")
 def get_verdict(score: int = 0):
     """Obtiene la frase y nivel representativo de Morelia para un puntaje global usando MORELIA_TIER_PHRASES."""
-    phrase, tier = pick_phrase_and_tier(max(0, min(100, score)))
-    return {"tier": tier, "phrase": phrase, "score": score}
+    phrase, tier_title, level, sticker = pick_phrase_and_tier(max(0, min(100, score)))
+    return {"tier": tier_title, "phrase": phrase, "level": level, "sticker": sticker, "score": score}
 
 
 @app.post("/api/session")

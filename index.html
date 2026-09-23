@@ -9,7 +9,7 @@
   <meta name="description"
     content="Plataforma de Percepción Geográfica y Memoria Espacial del Instituto Municipal de Planeación de Morelia (IMPLAN Morelia)." />
   <link rel="icon" type="image/png" href="./static/img/favicon_traza_m.png" />
-  <meta name="theme-color" id="theme-color-meta" content="#00833e" />
+  <meta name="theme-color" id="theme-color-meta" content="#f2f5ef" />
   <meta name="color-scheme" content="light dark" />
 
   <meta property="og:type" content="website" />
@@ -23,10 +23,10 @@
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="./static/style.css?v=20260921_centered_hero" />
+  <link rel="stylesheet" href="./static/style.css?v=20260922_crisp_polygons" />
 </head>
 
-<body data-difficulty="normal">
+<body data-difficulty="hard" style="background-color: #f2f5ef;">
   <noscript>
     <div class="noscript-msg">Croquis Morelia necesita JavaScript activo para dibujar el mapa.</div>
   </noscript>
@@ -59,16 +59,28 @@
           </div>
         </div>
 
-        <button class="hard-mode-toggle" id="anchors-toggle" type="button" aria-pressed="false"
-          title="Alternar modo difícil a ciegas">
-          <span class="hard-toggle-stripes" aria-hidden="true">
-            <span></span><span></span><span></span>
-          </span>
-          <span class="hard-toggle-copy">
-            <span class="hard-toggle-main">Modo difícil</span>
-            <span class="hard-toggle-sub">Sin referencias</span>
-          </span>
-        </button>
+        <div class="difficulty-toggle-group is-locked" id="difficulty-toggle-group" role="group"
+          aria-label="Nivel de dificultad fijado"
+          title="Modo fijado al inicio. Para cambiar de modo, presiona el botón Reiniciar">
+          <button class="mode-select-btn mode-facil-btn" id="mode-facil-btn" type="button" aria-pressed="false" disabled
+            title="Modo fácil (Fijado. Presiona Reiniciar para cambiar de modo)">
+            <svg class="mode-btn-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+              </polygon>
+            </svg>
+            <span class="mode-btn-label"><span class="mode-label-prefix">Modo </span>fácil</span>
+          </button>
+          <button class="mode-select-btn mode-dificil-btn active" id="mode-dificil-btn" type="button"
+            aria-pressed="true" disabled title="Modo difícil (Fijado. Presiona Reiniciar para cambiar de modo)">
+            <svg class="mode-btn-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span class="mode-btn-label"><span class="mode-label-prefix">Modo </span>difícil</span>
+          </button>
+        </div>
 
         <div class="header-actions-right" id="header-actions-right">
           <button id="borrar-btn" class="icon-btn" type="button" aria-label="Borrar trazo actual" disabled
@@ -87,6 +99,19 @@
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
               <polyline points="3 3 3 8 8 8"></polyline>
             </svg>
+          </button>
+
+          <button id="anchor-size-btn" class="icon-btn anchor-size-btn" type="button"
+            aria-label="Aumentar tamaño de texto de referencias"
+            title="Tamaño de texto de referencias: Normal (clic para agrandar)">
+            <svg class="anchor-size-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 18l4.5-12 4.5 12"></path>
+              <path d="M4.8 13.5h5.4"></path>
+              <path d="M14.5 18l3.2-8 3.2 8"></path>
+              <path d="M15.8 14.8h3.8"></path>
+            </svg>
+            <span class="anchor-size-badge" id="anchor-size-badge" aria-hidden="true">+</span>
           </button>
 
           <button id="about-btn" class="icon-btn" type="button" aria-label="Información del proyecto"
@@ -115,7 +140,7 @@
     </header>
 
     <!-- LIENZO DE MAPA SVG -->
-    <main id="map-wrap">
+    <main id="map-wrap" style="background-color: #f2f5ef;">
       <svg id="map" preserveAspectRatio="xMidYMid meet" role="img"
         aria-label="Mapa interactivo de Morelia para dibujar de memoria">
         <defs>
@@ -131,9 +156,11 @@
         </defs>
 
         <g id="zoom-root">
-          <!-- Silueta del Valle / Mancha Urbana -->
+          <!-- Silueta del Valle / Mancha Urbana (cd_morelia_pol.geojson) -->
           <g id="layer-valle"></g>
-          <!-- Puntos de Ancla / Referencias -->
+          <!-- 21 Polígonos de Referencia Guía con Contorno Punteado para Modo Fácil (pol_morelia.geojson) -->
+          <g id="layer-pol-morelia"></g>
+          <!-- Puntos de Ancla / Referencias (morelia_anchors.geojson) -->
           <g id="layer-anchors"></g>
           <!-- Geometría Real Revelada -->
           <g id="layer-truth"></g>
@@ -182,6 +209,40 @@
         </div>
       </div>
 
+      <!-- INDICADOR CARTOGRÁFICO DE NORTE -->
+      <div id="map-north" class="map-north" role="button" tabindex="0"
+        aria-label="Norte geográfico. Clic para centrar y reorientar el mapa"
+        title="Norte geográfico (Orientación hacia el norte · Clic para re-centrar)">
+        <div class="north-compass-rose">
+          <svg class="north-arrow-svg" viewBox="0 0 44 44" width="44" height="44" fill="none"
+            xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Anillo exterior e interior cartográfico -->
+            <circle cx="22" cy="22" r="19" class="north-ring-outer" />
+            <circle cx="22" cy="22" r="14" class="north-ring-inner" />
+
+            <!-- Marcas cardinales E, O, S -->
+            <line x1="8" y1="22" x2="11" y2="22" class="north-tick" />
+            <line x1="33" y1="22" x2="36" y2="22" class="north-tick" />
+            <line x1="22" y1="33" x2="22" y2="36" class="north-tick" />
+
+            <!-- Letra N destacada -->
+            <text x="22" y="10.5" class="north-label-n">N</text>
+
+            <!-- Flecha Norte bicolor (Cantera Rosa IMPLAN y Terracota) -->
+            <polygon points="22,12 18,22 22,20.2" class="north-needle-main" />
+            <polygon points="22,12 26,22 22,20.2" class="north-needle-shadow" />
+
+            <!-- Flecha Sur bicolor (Gris cartográfico sutil) -->
+            <polygon points="22,32 18,22 22,20.2" class="south-needle-main" />
+            <polygon points="22,32 26,22 22,20.2" class="south-needle-shadow" />
+
+            <!-- Pivote central -->
+            <circle cx="22" cy="21.5" r="2.2" class="north-pivot" />
+            <circle cx="22" cy="21.5" r="0.8" fill="#ffffff" />
+          </svg>
+        </div>
+      </div>
+
       <!-- CONTROLES DE ZOOM FLOTANTES -->
       <div id="zoom-controls" class="zoom-controls" role="group" aria-label="Controles de zoom y encuadre">
         <button id="zoom-in-btn" class="zoom-btn" type="button" aria-label="Acercar mapa" title="Acercar mapa (+)">
@@ -207,6 +268,9 @@
         </button>
         <div id="zoom-level-text" class="zoom-level-badge" title="Nivel de zoom actual">100%</div>
       </div>
+
+      <!-- TOAST DE CONFIRMACIÓN VISUAL PARA ACCIONES DEL MAPA -->
+      <div id="map-toast" class="map-toast" aria-live="polite" hidden></div>
 
       <!-- INSTRUCCIÓN FLOTANTE DISCRETA EN LA PARTE SUPERIOR -->
       <div id="draw-prompt" class="draw-prompt">
@@ -282,7 +346,8 @@
             <div class="share-card-score-area">
               <div class="share-card-score-hero" id="share-card-score-hero">
                 <div class="share-card-sticker-wrap" id="share-card-sticker-wrap">
-                  <img id="share-sticker-img" class="share-card-sticker-img" src="./static/img/stickers/nivel5_gps_moreliano.png" alt="Sticker de Calificación Global" />
+                  <img id="share-sticker-img" class="share-card-sticker-img"
+                    src="./static/img/stickers/nivel5_gps_moreliano.png" alt="Sticker de Calificación Global" />
                 </div>
                 <div class="share-card-score-content">
                   <div class="share-card-score" id="share-card-score">
@@ -420,13 +485,65 @@
       </div>
       <div class="modal-body">
         <p class="welcome-intro-p">Traza de memoria sobre el mapa el acueducto, ríos y vialidades emblemáticas de
-          Morelia. Evaluaremos tus trazos en tiempo real contra la cartografía oficial del <strong>IMPLAN</strong>.</p>
+          Morelia. Evaluaremos tus trazos contra la cartografía oficial del <strong>IMPLAN</strong>.</p>
 
-        <div class="about-tips">
-          <div class="tips-row">
-            <span><strong>Normal:</strong> con referencias</span>
-            <span class="tip-sep" aria-hidden="true">·</span>
-            <span><strong>Difícil:</strong> sin referencias</span>
+        <!-- SELECTOR DE NIVEL DE DIFICULTAD INICIAL -->
+        <div class="welcome-difficulty-section" id="welcome-difficulty-section">
+          <label class="welcome-name-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+              </polygon>
+            </svg>
+            <span>Selecciona tu nivel de dificultad: <strong class="name-required-asterisk">*</strong></span>
+          </label>
+          <div class="welcome-diff-cards" role="radiogroup" aria-label="Nivel de dificultad inicial">
+            <button type="button" class="welcome-diff-card card-facil" id="welcome-mode-facil-btn" role="radio"
+              aria-checked="false" data-mode="facil">
+              <div class="diff-card-top">
+                <span class="diff-badge badge-facil">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon
+                      points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                    </polygon>
+                  </svg>
+                  Modo fácil
+                </span>
+                <span class="diff-radio-circle" aria-hidden="true"><span class="diff-radio-inner"></span></span>
+              </div>
+              <p class="diff-card-desc"><strong>Con 21 polígonos guía</strong>, puntos de referencia, silueta urbana y
+                pistas activas.
+              </p>
+            </button>
+
+            <button type="button" class="welcome-diff-card card-dificil active" id="welcome-mode-dificil-btn"
+              role="radio" aria-checked="true" data-mode="hard">
+              <div class="diff-card-top">
+                <span class="diff-badge badge-dificil">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  Modo difícil
+                </span>
+                <span class="diff-radio-circle" aria-hidden="true"><span class="diff-radio-inner"></span></span>
+              </div>
+              <p class="diff-card-desc"><strong>Sin 21 polígonos guía</strong>, pero con puntos de referencia, silueta
+                urbana y
+                pistas activas.
+              </p>
+            </button>
+          </div>
+          <div class="welcome-diff-notice">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>El nivel elegido quedará <strong>fijo</strong> durante todo el reto. Solo podrá cambiarse reiniciando
+              el croquis.</span>
           </div>
         </div>
 
@@ -548,8 +665,9 @@
               <div class="instruction-step">
                 <div class="step-num">4</div>
                 <div class="step-content">
-                  <strong>Pistas y Dificultad:</strong> Pulsa <strong>Pista</strong> (💡) para obtener una referencia
-                  clave. Puedes alternar al <strong>Modo difícil</strong> para dibujar sin puntos de referencia.
+                  <strong>Pistas y Dificultad:</strong> En <strong>Modo fácil</strong> se visualizan los 21 polígonos
+                  guía, puntos de referencia y pistas activas. En <strong>Modo difícil</strong> se muestra
+                  únicamente el polígono de la ciudad y referencias, sin polígonos guía y con pistas desactivadas.
                 </div>
               </div>
             </div>
@@ -575,15 +693,22 @@
                   </li>
                   <li>
                     <span class="action-tag">Mover</span>
-                    <span class="action-desc">Desliza con <strong>2 dedos simultáneos</strong> para mover el mapa.</span>
+                    <span class="action-desc">Desliza con <strong>2 dedos simultáneos</strong> para mover el
+                      mapa.</span>
                   </li>
                   <li>
                     <span class="action-tag">Zoom</span>
-                    <span class="action-desc"><strong>Pellizca con 2 dedos</strong> o pulsa los botones <strong>+</strong> / <strong>−</strong>.</span>
+                    <span class="action-desc"><strong>Pellizca con 2 dedos</strong> o pulsa los botones
+                      <strong>+</strong> / <strong>−</strong>.</span>
                   </li>
                   <li>
                     <span class="action-tag">Centrar</span>
                     <span class="action-desc">Toca el botón flotante <strong>⟲</strong> (arriba a la derecha).</span>
+                  </li>
+                  <li>
+                    <span class="action-tag">Texto</span>
+                    <span class="action-desc">Toca el botón <strong>aA</strong> para agrandar los nombres de puntos de
+                      referencia.</span>
                   </li>
                 </ul>
               </div>
@@ -606,15 +731,23 @@
                   </li>
                   <li>
                     <span class="action-tag">Mover</span>
-                    <span class="action-desc">Mantén <strong>Espacio</strong> + arrastrar, o <strong>clic derecho</strong>.</span>
+                    <span class="action-desc">Mantén <strong>Espacio</strong> + arrastrar, o <strong>clic
+                        derecho</strong>.</span>
                   </li>
                   <li>
                     <span class="action-tag">Zoom</span>
-                    <span class="action-desc"><strong>Scroll del ratón</strong> o botones flotantes <strong>+</strong> / <strong>−</strong>.</span>
+                    <span class="action-desc"><strong>Scroll del ratón</strong> o botones flotantes <strong>+</strong> /
+                      <strong>−</strong>.</span>
                   </li>
                   <li>
                     <span class="action-tag">Centrar</span>
-                    <span class="action-desc">Pulsa el botón flotante <strong>⟲</strong> o la tecla <strong>0</strong>.</span>
+                    <span class="action-desc">Pulsa el botón flotante <strong>⟲</strong> o la tecla
+                      <strong>0</strong>.</span>
+                  </li>
+                  <li>
+                    <span class="action-tag">Texto</span>
+                    <span class="action-desc">Pulsa el botón <strong>aA</strong> o la tecla <strong>T</strong> para
+                      agrandar los nombres de referencias.</span>
                   </li>
                 </ul>
               </div>
@@ -648,11 +781,12 @@
     aria-labelledby="confirm-mode-title">
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content">
-      <h3 id="confirm-mode-title">¿Cambiar de dificultad?</h3>
-      <p id="confirm-mode-body">Cambiar de modo reiniciará tu croquis para que el puntaje sea justo.</p>
+      <h3 id="confirm-mode-title">¿Reiniciar para cambiar de modo?</h3>
+      <p id="confirm-mode-body">El nivel fue seleccionado al inicio y está fijado para esta prueba. Para cambiar de modo
+        es necesario reiniciar el croquis.</p>
       <div class="modal-actions">
-        <button id="confirm-mode-cancel-btn" class="pill-btn ghost" type="button">Conservar trazos</button>
-        <button id="confirm-mode-switch-btn" class="pill-btn secondary" type="button">Cambiar modo</button>
+        <button id="confirm-mode-cancel-btn" class="pill-btn ghost" type="button">Continuar prueba</button>
+        <button id="confirm-mode-switch-btn" class="pill-btn secondary" type="button">Reiniciar y cambiar modo</button>
       </div>
     </div>
   </div>
@@ -676,10 +810,11 @@
     <div class="modal-backdrop" aria-hidden="true"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="confirm-reset-title">¿Reiniciar todo el croquis?</h3>
+        <h3 id="confirm-reset-title">¿Estás seguro de que quieres reiniciar?</h3>
         <button class="modal-close-btn confirm-reset-close" type="button" aria-label="Cerrar modal">&times;</button>
       </div>
-      <p id="confirm-reset-body">Se borrarán todos tus trazos y volverás a empezar desde el primer elemento.</p>
+      <p id="confirm-reset-body">Se borrarán todos tus trazos actuales y volverás al inicio del croquis. Podrás cambiar
+        tu nombre o nivel de dificultad.</p>
       <div class="modal-actions">
         <button id="confirm-reset-cancel-btn" class="pill-btn ghost" type="button">Cancelar</button>
         <button id="reset-all-btn" class="pill-btn highlight" type="button">
@@ -688,7 +823,7 @@
             <polyline points="1 4 1 10 7 10"></polyline>
             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
           </svg>
-          <span>Reiniciar todo</span>
+          <span>Sí, reiniciar</span>
         </button>
       </div>
     </div>
@@ -703,10 +838,10 @@
   </script>
 
   <script src="./static/vendor/d3.v7.min.js"></script>
-  <script src="./static/scoring.js?v=20260921_centered_hero"></script>
-  <script src="./data/morelia_data.js?v=20260921_centered_hero"></script>
-  <script src="./static/db.js?v=20260921_centered_hero"></script>
-  <script src="./static/app.js?v=20260921_centered_hero"></script>
+  <script src="./static/scoring.js?v=20260922_crisp_polygons"></script>
+  <script src="./data/morelia_data.js?v=20260922_crisp_polygons"></script>
+  <script src="./static/db.js?v=20260922_crisp_polygons"></script>
+  <script src="./static/app.js?v=20260922_crisp_polygons"></script>
 </body>
 
 </html>
