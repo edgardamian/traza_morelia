@@ -68,17 +68,25 @@ traza_morelia/
 ├── data/
 │   ├── lineas_morelia.geojson    # Trazos oficiales georreferenciados de las 8 capas
 │   ├── cd_morelia_pol.geojson    # Polígono oficial de la mancha urbana de Morelia
-│   ├── morelia_anchors.geojson   # Puntos de referencia para Modo Normal
-│   └── morelia_valle.geojson     # Silueta cartográfica base
+│   ├── pol_morelia.geojson       # 21 polígonos guía de apoyo para Modo Fácil
+│   ├── morelia_anchors.geojson   # Puntos de referencia y anclajes urbanos
+│   ├── morelia_valle.geojson     # Silueta cartográfica base
+│   └── morelia_data.js           # Bundle estático offline de todas las capas
 ├── static/
-│   ├── index.html                # Interfaz principal de juego y modales
+│   ├── index.html                # Interfaz para servidor estático /static
 │   ├── style.css                 # Sistema de diseño, estética Cantera Rosa e IMPLAN
 │   ├── app.js                    # Lógica interactiva en cliente, D3.js y exportación HD
+│   ├── scoring.js                # Motor de evaluación geométrica en cliente (JS)
+│   ├── db.js                     # Almacenamiento local IndexedDB y sincronización
 │   ├── vendor/
 │   │   └── d3.v7.min.js          # Librería D3.js para proyección y manipulación SVG
-│   └── img/                      # Logotipos oficiales (IMPLAN, Escudo Morelia, SIGEM, cenefa)
+│   └── img/                      # Logotipos oficiales (IMPLAN, Escudo Morelia, SIGEM) y stickers
+├── index.html                    # Interfaz principal de juego y modales (raíz)
 ├── server.py                     # Servidor FastAPI y endpoints REST
-├── scoring.py                    # Motor de evaluación geométrica y similitud espacial
+├── scoring.py                    # Motor de evaluación geométrica y similitud espacial (Python)
+├── google_apps_script.js         # Webhook para sincronización con Google Sheets y Google Drive
+├── test_scoring.py               # Pruebas unitarias del motor de calificación matemática
+├── test_full_stack.py            # Pruebas de integración de endpoints y recursos estáticos
 ├── requirements.txt              # Dependencias de Python
 ├── iniciar_servidor.bat          # Script de arranque en Windows
 └── README.md                     # Documentación general
